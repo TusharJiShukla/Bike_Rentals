@@ -11,8 +11,9 @@ import {
   ScrollView,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { X, ShieldCheck, Mail, Calendar, AlertTriangle, ArrowRight, ChevronDown } from 'lucide-react-native';
+import { X, ShieldCheck, Calendar, AlertTriangle, ArrowRight, ChevronDown } from 'lucide-react-native';
 import { COLORS, RADIUS, SHADOWS } from '../theme/colors';
+import { useLanguage } from '../i18n/LanguageContext';
 
 function GoogleIcon({ size = 18 }) {
   return (
@@ -39,7 +40,8 @@ function GoogleIcon({ size = 18 }) {
 
 // Generate Day, Month, Year arrays
 const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
-const MONTHS = [
+
+const MONTHS_EN = [
   { value: '01', label: 'Jan (01)' },
   { value: '02', label: 'Feb (02)' },
   { value: '03', label: 'Mar (03)' },
@@ -54,8 +56,23 @@ const MONTHS = [
   { value: '12', label: 'Dec (12)' },
 ];
 
+const MONTHS_HI = [
+  { value: '01', label: 'जनवरी (01)' },
+  { value: '02', label: 'फ़रवरी (02)' },
+  { value: '03', label: 'मार्च (03)' },
+  { value: '04', label: 'अप्रैल (04)' },
+  { value: '05', label: 'मई (05)' },
+  { value: '06', label: 'जून (06)' },
+  { value: '07', label: 'जुलाई (07)' },
+  { value: '08', label: 'अगस्त (08)' },
+  { value: '09', label: 'सितम्बर (09)' },
+  { value: '10', label: 'अक्टूबर (10)' },
+  { value: '11', label: 'नवम्बर (11)' },
+  { value: '12', label: 'दिसम्बर (12)' },
+];
+
 const currentYear = new Date().getFullYear();
-// Rider years from currentYear - 100 up to currentYear - 14
+// Rider years from currentYear - 100 up to currentYear - 16
 const YEARS = Array.from({ length: 75 }, (_, i) => String(currentYear - 16 - i));
 
 export default function AuthModal({
@@ -64,6 +81,8 @@ export default function AuthModal({
   onLogin,
   user,
 }) {
+  const { t, isHindi } = useLanguage();
+
   const [activeTab, setActiveTab] = useState('signin'); // 'signin' | 'signup'
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -78,6 +97,8 @@ export default function AuthModal({
   const [otpSent, setOtpSent] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
+
+  const monthsList = isHindi ? MONTHS_HI : MONTHS_EN;
 
   // Reset all fields
   const resetAllFields = () => {
@@ -142,46 +163,53 @@ export default function AuthModal({
     setOtp('');
 
     if (!email || !validateEmail(email)) {
-      setErrorMsg('Please enter a valid email address (e.g. name@example.com)');
+      setErrorMsg(t('auth.validEmailErr', 'Please enter a valid email address (e.g. name@example.com)'));
       return;
     }
 
     if (activeTab === 'signup') {
       if (!name.trim()) {
-        setErrorMsg('Please enter your full name.');
+        setErrorMsg(t('auth.validNameErr', 'Please enter your full name.'));
         return;
       }
 
       if (!dobDay || !dobMonth || !dobYear) {
-        setErrorMsg('Please select Day, Month and Year of your Date of Birth.');
+        setErrorMsg(t('auth.selectDobErr', 'Please select Day, Month and Year of your Date of Birth.'));
         return;
       }
 
       const riderAge = calculateAge(dobDay, dobMonth, dobYear);
 
       if (riderAge < 18) {
-        setErrorMsg(`Underage (${riderAge} yrs): Registration is strictly restricted to riders aged 18+ with a valid license.`);
+        setErrorMsg(
+          isHindi
+            ? `कम आयु (${riderAge} वर्ष): पंजीकरण केवल 18 वर्ष या उससे अधिक आयु के वैध लाइसेंस धारकों के लिए है।`
+            : `Underage (${riderAge} yrs): Registration is strictly restricted to riders aged 18+ with a valid license.`
+        );
         return;
       }
     }
 
     setOtpSent(true);
-    setInfoMsg(`Verification code sent to ${email}! (Demo Code: 1234)`);
+    setInfoMsg(
+      isHindi
+        ? `सत्यापन कोड ${email} पर भेजा गया! (डेमो कोड: 1234)`
+        : `Verification code sent to ${email}! (Demo Code: 1234)`
+    );
   };
 
   const handleVerifyAndSubmit = () => {
     setErrorMsg('');
     const submittedOtp = (otp || '').trim();
-    // Prompt removal after single submission!
     setOtp('');
 
     if (!submittedOtp || submittedOtp.length < 4) {
-      setErrorMsg('Please enter the 4-digit verification code.');
+      setErrorMsg(t('auth.enterOtpErr', 'Please enter the 4-digit verification code.'));
       return;
     }
 
     if (submittedOtp !== '1234') {
-      setErrorMsg('Invalid OTP code! Please enter 1234.');
+      setErrorMsg(t('auth.invalidOtpErr', 'Invalid OTP code! Please enter 1234.'));
       return;
     }
 
@@ -212,7 +240,7 @@ export default function AuthModal({
 
   const handleGoogleLogin = () => {
     const googleUser = {
-      name: 'Google Rider',
+      name: isHindi ? 'राइडर (गूगल)' : 'Google Rider',
       email: 'rider.google@gmail.com',
       dob: '1998-05-12',
       loginMethod: 'google',
@@ -253,13 +281,17 @@ export default function AuthModal({
                   /* Logged-In User Profile View */
                   <View style={styles.profileContainer}>
                     <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
-                    <Text style={styles.welcomeText}>Logged In</Text>
+                    <Text style={styles.welcomeText}>
+                      {t('auth.loggedInTitle', 'Logged In')}
+                    </Text>
                     <Text style={styles.userNameText}>{user.name}</Text>
                     <Text style={styles.userEmailText}>{user.email}</Text>
 
                     <View style={styles.verifiedBadge}>
                       <ShieldCheck size={16} color={COLORS.statusAvailable} />
-                      <Text style={styles.verifiedBadgeText}>18+ Verified Rider Account</Text>
+                      <Text style={styles.verifiedBadgeText}>
+                        {t('auth.verifiedBadge', '18+ Verified Rider Account')}
+                      </Text>
                     </View>
 
                     <TouchableOpacity
@@ -267,7 +299,9 @@ export default function AuthModal({
                       onPress={handleSignOut}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.signOutText}>Sign Out</Text>
+                      <Text style={styles.signOutText}>
+                        {t('auth.signOut', 'Sign Out')}
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -280,7 +314,7 @@ export default function AuthModal({
                         onPress={() => handleTabSwitch('signin')}
                       >
                         <Text style={[styles.tabText, activeTab === 'signin' && styles.tabTextActive]}>
-                          Sign In
+                          {t('auth.signInTab', 'Sign In')}
                         </Text>
                       </TouchableOpacity>
 
@@ -289,18 +323,20 @@ export default function AuthModal({
                         onPress={() => handleTabSwitch('signup')}
                       >
                         <Text style={[styles.tabText, activeTab === 'signup' && styles.tabTextActive]}>
-                          Sign Up (18+)
+                          {t('auth.signUpTab', 'Sign Up (18+)')}
                         </Text>
                       </TouchableOpacity>
                     </View>
 
                     <Text style={styles.modalTitle}>
-                      {activeTab === 'signup' ? 'Create 18+ Rider Account' : 'Welcome to The Road Eagle'}
+                      {activeTab === 'signup'
+                        ? t('auth.createTitle', 'Create 18+ Rider Account')
+                        : t('auth.welcomeTitle', 'Welcome to The Road Eagle')}
                     </Text>
                     <Text style={styles.modalSubtitle}>
                       {activeTab === 'signup'
-                        ? 'Select Day, Month & Year of Birth. Age will be strictly verified before booking.'
-                        : 'Quick passwordless sign in via Email OTP.'}
+                        ? t('auth.createSubtitle', 'Select Day, Month & Year of Birth. Age will be strictly verified before booking.')
+                        : t('auth.welcomeSubtitle', 'Quick passwordless sign in via Email OTP.')}
                     </Text>
 
                     {errorMsg ? (
@@ -321,10 +357,12 @@ export default function AuthModal({
                       <View>
                         {activeTab === 'signup' && (
                           <View style={styles.inputGroup}>
-                            <Text style={styles.inputLabel}>FULL NAME</Text>
+                            <Text style={styles.inputLabel}>
+                              {t('auth.fullName', 'FULL NAME')}
+                            </Text>
                             <TextInput
                               style={styles.textInput}
-                              placeholder="e.g. Rahul Verma"
+                              placeholder={t('auth.fullNamePlaceholder', 'e.g. Rahul Verma')}
                               placeholderTextColor="#475569"
                               value={name}
                               onChangeText={setName}
@@ -333,10 +371,12 @@ export default function AuthModal({
                         )}
 
                         <View style={styles.inputGroup}>
-                          <Text style={styles.inputLabel}>EMAIL ADDRESS</Text>
+                          <Text style={styles.inputLabel}>
+                            {t('auth.email', 'EMAIL ADDRESS')}
+                          </Text>
                           <TextInput
                             style={styles.textInput}
-                            placeholder="e.g. rahul@example.com"
+                            placeholder={t('auth.emailPlaceholder', 'e.g. rahul@example.com')}
                             placeholderTextColor="#475569"
                             value={email}
                             onChangeText={setEmail}
@@ -349,7 +389,9 @@ export default function AuthModal({
                           <View style={styles.inputGroup}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                               <Calendar size={14} color="#38BDF8" />
-                              <Text style={styles.inputLabel}>DATE OF BIRTH (18+ MANDATORY)</Text>
+                              <Text style={styles.inputLabel}>
+                                {t('auth.dob', 'DATE OF BIRTH (18+ MANDATORY)')}
+                              </Text>
                             </View>
 
                             {/* 3 Separate Dropdown Selectors for Day, Month, Year */}
@@ -361,7 +403,7 @@ export default function AuthModal({
                                 activeOpacity={0.8}
                               >
                                 <Text style={dobDay ? styles.dobValueText : styles.dobPlaceholderText}>
-                                  {dobDay ? `Day ${dobDay}` : 'Day'}
+                                  {dobDay ? `${isHindi ? 'दिन' : 'Day'} ${dobDay}` : t('auth.dobDay', 'Day')}
                                 </Text>
                                 <ChevronDown size={14} color="#94A3B8" />
                               </TouchableOpacity>
@@ -373,7 +415,7 @@ export default function AuthModal({
                                 activeOpacity={0.8}
                               >
                                 <Text style={dobMonth ? styles.dobValueText : styles.dobPlaceholderText}>
-                                  {dobMonth ? MONTHS.find(m => m.value === dobMonth)?.label || dobMonth : 'Month'}
+                                  {dobMonth ? monthsList.find(m => m.value === dobMonth)?.label || dobMonth : t('auth.dobMonth', 'Month')}
                                 </Text>
                                 <ChevronDown size={14} color="#94A3B8" />
                               </TouchableOpacity>
@@ -385,7 +427,7 @@ export default function AuthModal({
                                 activeOpacity={0.8}
                               >
                                 <Text style={dobYear ? styles.dobValueText : styles.dobPlaceholderText}>
-                                  {dobYear || 'Year'}
+                                  {dobYear || t('auth.dobYear', 'Year')}
                                 </Text>
                                 <ChevronDown size={14} color="#94A3B8" />
                               </TouchableOpacity>
@@ -394,7 +436,9 @@ export default function AuthModal({
                             {/* Expanded Selection List inside Modal */}
                             {activeDobPicker === 'day' && (
                               <View style={styles.pickerDropdownContainer}>
-                                <Text style={styles.pickerDropdownHeader}>Select Birth Day</Text>
+                                <Text style={styles.pickerDropdownHeader}>
+                                  {t('auth.selectBirthDay', 'Select Birth Day')}
+                                </Text>
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 4 }}>
                                   {DAYS.map((d) => (
                                     <TouchableOpacity
@@ -414,9 +458,11 @@ export default function AuthModal({
 
                             {activeDobPicker === 'month' && (
                               <View style={styles.pickerDropdownContainer}>
-                                <Text style={styles.pickerDropdownHeader}>Select Birth Month</Text>
+                                <Text style={styles.pickerDropdownHeader}>
+                                  {t('auth.selectBirthMonth', 'Select Birth Month')}
+                                </Text>
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 4 }}>
-                                  {MONTHS.map((m) => (
+                                  {monthsList.map((m) => (
                                     <TouchableOpacity
                                       key={m.value}
                                       style={[styles.pickerItemChip, dobMonth === m.value && styles.pickerItemChipActive]}
@@ -434,7 +480,9 @@ export default function AuthModal({
 
                             {activeDobPicker === 'year' && (
                               <View style={styles.pickerDropdownContainer}>
-                                <Text style={styles.pickerDropdownHeader}>Select Birth Year</Text>
+                                <Text style={styles.pickerDropdownHeader}>
+                                  {t('auth.selectBirthYear', 'Select Birth Year')}
+                                </Text>
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 4 }}>
                                   {YEARS.map((y) => (
                                     <TouchableOpacity
@@ -453,7 +501,7 @@ export default function AuthModal({
                             )}
 
                             <Text style={styles.dobHelper}>
-                              Age must be strictly 18 or above to rent and drive motorbikes.
+                              {t('auth.dobHelper', 'Age must be strictly 18 or above to rent and drive motorbikes.')}
                             </Text>
                           </View>
                         )}
@@ -464,14 +512,16 @@ export default function AuthModal({
                           activeOpacity={0.85}
                         >
                           <Text style={styles.submitBtnText}>
-                            {activeTab === 'signup' ? 'Verify Age & Send OTP' : 'Send Email OTP'}
+                            {activeTab === 'signup'
+                              ? t('auth.verifyAgeSendOtpBtn', 'Verify Age & Send OTP')
+                              : t('auth.sendOtpBtn', 'Send Email OTP')}
                           </Text>
                           <ArrowRight size={16} color="#FFFFFF" />
                         </TouchableOpacity>
 
                         <View style={styles.dividerRow}>
                           <View style={styles.dividerLine} />
-                          <Text style={styles.dividerText}>OR</Text>
+                          <Text style={styles.dividerText}>{t('auth.or', 'OR')}</Text>
                           <View style={styles.dividerLine} />
                         </View>
 
@@ -481,7 +531,9 @@ export default function AuthModal({
                           activeOpacity={0.85}
                         >
                           <GoogleIcon size={18} />
-                          <Text style={styles.googleBtnText}>Continue with Google</Text>
+                          <Text style={styles.googleBtnText}>
+                            {t('auth.continueGoogle', 'Continue with Google')}
+                          </Text>
                         </TouchableOpacity>
                       </View>
                     ) : (
@@ -489,18 +541,21 @@ export default function AuthModal({
                       <View>
                         <View style={styles.otpBanner}>
                           <Text style={styles.otpBannerText}>
-                            18+ Verified! OTP sent to <Text style={{ fontWeight: '800' }}>{email}</Text>
+                            {t('auth.otpBannerText', '18+ Verified! OTP sent to')}{' '}
+                            <Text style={{ fontWeight: '800' }}>{email}</Text>
                           </Text>
                         </View>
 
                         <View style={styles.inputGroup}>
-                          <Text style={styles.inputLabel}>ENTER 4-DIGIT EMAIL OTP</Text>
+                          <Text style={styles.inputLabel}>
+                            {t('auth.enterOtp', 'ENTER 4-DIGIT EMAIL OTP')}
+                          </Text>
                           <TextInput
                             style={[styles.textInput, styles.otpInput]}
                             placeholder="• • • •"
                             placeholderTextColor="#475569"
                             value={otp}
-                            onChangeText={(t) => setOtp(t.replace(/\D/g, '').slice(0, 4))}
+                            onChangeText={(text) => setOtp(text.replace(/\D/g, '').slice(0, 4))}
                             keyboardType="number-pad"
                             maxLength={4}
                             autoFocus
@@ -509,10 +564,14 @@ export default function AuthModal({
 
                         <View style={styles.otpLinksRow}>
                           <TouchableOpacity onPress={() => setOtp('1234')}>
-                            <Text style={styles.otpDemoLink}>Fill Demo Code (1234)</Text>
+                            <Text style={styles.otpDemoLink}>
+                              {isHindi ? 'डेमो कोड भरें (1234)' : 'Fill Demo Code (1234)'}
+                            </Text>
                           </TouchableOpacity>
                           <TouchableOpacity onPress={() => resetOtpOnly()}>
-                            <Text style={styles.otpChangeLink}>Change Email</Text>
+                            <Text style={styles.otpChangeLink}>
+                              {isHindi ? 'ईमेल बदलें' : 'Change Email'}
+                            </Text>
                           </TouchableOpacity>
                         </View>
 
@@ -521,7 +580,9 @@ export default function AuthModal({
                           onPress={handleVerifyAndSubmit}
                           activeOpacity={0.85}
                         >
-                          <Text style={styles.submitBtnText}>Verify OTP & Continue</Text>
+                          <Text style={styles.submitBtnText}>
+                            {t('auth.verifyOtpBtn', 'Verify OTP & Continue')}
+                          </Text>
                           <ArrowRight size={16} color="#FFFFFF" />
                         </TouchableOpacity>
                       </View>
@@ -649,7 +710,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     paddingHorizontal: 14,
     color: COLORS.textPrimary,
-    fontSize: 13.5,
+    fontSize: 14,
   },
   dobSelectorsRow: {
     flexDirection: 'row',
@@ -657,58 +718,58 @@ const styles = StyleSheet.create({
   },
   dobSelectBox: {
     flex: 1,
-    height: 46,
+    height: 44,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
     borderRadius: RADIUS.md,
-    paddingHorizontal: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 10,
   },
   dobSelectBoxActive: {
     borderColor: '#38BDF8',
     backgroundColor: 'rgba(2, 132, 199, 0.15)',
   },
   dobValueText: {
-    color: '#FFFFFF',
-    fontSize: 13,
+    color: COLORS.textPrimary,
+    fontSize: 12.5,
     fontWeight: '700',
   },
   dobPlaceholderText: {
-    color: '#475569',
-    fontSize: 13,
+    color: '#64748B',
+    fontSize: 12.5,
   },
   pickerDropdownContainer: {
     backgroundColor: '#1E293B',
     borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.35)',
     padding: 10,
     marginTop: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.25)',
   },
   pickerDropdownHeader: {
-    color: '#38BDF8',
     fontSize: 11,
     fontWeight: '800',
+    color: '#38BDF8',
     marginBottom: 6,
-    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   pickerItemChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   pickerItemChipActive: {
     backgroundColor: '#0284C7',
     borderColor: '#38BDF8',
   },
   pickerItemText: {
-    color: '#CBD5E1',
+    color: COLORS.textSecondary,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -717,28 +778,23 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   dobHelper: {
-    color: COLORS.textMuted,
     fontSize: 11,
-    marginTop: 5,
+    color: '#64748B',
+    marginTop: 6,
   },
   submitBtn: {
-    height: 46,
     backgroundColor: '#0284C7',
-    borderRadius: RADIUS.full,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginTop: 8,
-    shadowColor: '#0284C7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 4,
+    paddingVertical: 12,
+    borderRadius: RADIUS.full,
+    marginTop: 6,
   },
   submitBtnText: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontWeight: '800',
     fontSize: 14,
   },
   dividerRow: {
@@ -749,60 +805,57 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   dividerText: {
+    paddingHorizontal: 12,
     color: COLORS.textMuted,
     fontSize: 11,
-    fontWeight: '700',
-    marginHorizontal: 12,
+    fontWeight: '800',
   },
   googleBtn: {
-    height: 46,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
-    borderRadius: RADIUS.full,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
+    paddingVertical: 11,
+    borderRadius: RADIUS.full,
   },
   googleBtnText: {
     color: COLORS.textPrimary,
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 13,
   },
   otpBanner: {
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
     borderWidth: 1,
     borderColor: 'rgba(16, 185, 129, 0.35)',
     borderRadius: RADIUS.md,
     padding: 10,
-    marginBottom: 14,
-    alignItems: 'center',
+    marginBottom: 16,
   },
   otpBannerText: {
     color: '#34D399',
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12.5,
   },
   otpInput: {
+    fontSize: 22,
     textAlign: 'center',
-    letterSpacing: 12,
-    fontSize: 20,
+    letterSpacing: 10,
     fontWeight: '800',
   },
   otpLinksRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
     marginBottom: 16,
   },
   otpDemoLink: {
     color: '#38BDF8',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   otpChangeLink: {
     color: COLORS.textMuted,
@@ -810,29 +863,33 @@ const styles = StyleSheet.create({
   },
   profileContainer: {
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
   },
   avatarImage: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     marginBottom: 12,
     borderWidth: 2,
     borderColor: '#38BDF8',
   },
   welcomeText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
+    fontSize: 12,
+    color: COLORS.textMuted,
+    textTransform: 'uppercase',
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   userNameText: {
     fontSize: 20,
     fontWeight: '800',
     color: COLORS.textPrimary,
-    marginBottom: 2,
+    marginTop: 2,
   },
   userEmailText: {
     fontSize: 13,
-    color: COLORS.textMuted,
+    color: COLORS.textSecondary,
+    marginTop: 2,
     marginBottom: 14,
   },
   verifiedBadge: {
@@ -843,27 +900,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: RADIUS.full,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
     marginBottom: 20,
   },
   verifiedBadgeText: {
     color: '#34D399',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11.5,
+    fontWeight: '700',
   },
   signOutBtn: {
-    width: '100%',
-    height: 44,
+    backgroundColor: 'rgba(225, 29, 72, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.5)',
+    borderColor: 'rgba(225, 29, 72, 0.35)',
+    paddingHorizontal: 24,
+    paddingVertical: 9,
     borderRadius: RADIUS.full,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   signOutText: {
-    color: '#EF4444',
+    color: '#FDA4AF',
+    fontSize: 12.5,
     fontWeight: '700',
-    fontSize: 14,
   },
 });
