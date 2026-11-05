@@ -9,9 +9,10 @@ import {
   TouchableWithoutFeedback,
   ScrollView,
   Linking,
+  Platform,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { X, Send, CheckCircle2, ShieldCheck, Calendar, Phone, User, MessageSquare } from 'lucide-react-native';
+import { X, Send, CheckCircle2, ShieldCheck, Calendar, Phone, User, MessageSquare, Clock, Check } from 'lucide-react-native';
 import { BIKES_DATA } from '../data/bikes';
 import { COLORS, RADIUS, SHADOWS } from '../theme/colors';
 
@@ -87,176 +88,204 @@ export default function EnquiryModal({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <View style={[styles.modalCard, SHADOWS.card]}>
-              {/* Close Button */}
-              <TouchableOpacity
-                style={styles.closeBtn}
-                onPress={onClose}
-                activeOpacity={0.7}
-              >
-                <X size={18} color="#94A3B8" />
-              </TouchableOpacity>
+      <View style={styles.overlay}>
+        <TouchableWithoutFeedback onPress={onClose}>
+          <View style={styles.backdrop} />
+        </TouchableWithoutFeedback>
 
-              <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Header with WhatsApp Luxury Pill */}
-                <View style={styles.header}>
-                  <View style={styles.waIconCircle}>
-                    <WhatsAppSvgIcon size={26} color="#FFFFFF" />
+        <View style={[styles.modalCard, SHADOWS.card]}>
+          {/* Close Button */}
+          <TouchableOpacity
+            style={styles.closeBtn}
+            onPress={onClose}
+            activeOpacity={0.7}
+            accessibilityLabel="Close"
+          >
+            <X size={18} color="#94A3B8" />
+          </TouchableOpacity>
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+          >
+            {/* Header with WhatsApp Luxury Pill */}
+            <View style={styles.header}>
+              <View style={styles.waIconCircle}>
+                <WhatsAppSvgIcon size={26} color="#FFFFFF" />
+              </View>
+              <Text style={styles.title}>WhatsApp Concierge</Text>
+              <Text style={styles.subtitle}>
+                Direct instant assistance & custom rental quotes with our team
+              </Text>
+              <View style={styles.supportBadge}>
+                <View style={styles.pulseDot} />
+                <Text style={styles.supportBadgeText}>+91 98765 43210 • 24/7 Verified Support</Text>
+              </View>
+            </View>
+
+            {submitted ? (
+              <View style={styles.submittedWrap}>
+                <View style={styles.checkCircle}>
+                  <CheckCircle2 size={40} color="#10B981" />
+                </View>
+                <Text style={styles.submittedTitle}>Enquiry Submitted!</Text>
+                <Text style={styles.submittedSubtitle}>
+                  We have received your enquiry for <Text style={{ fontWeight: '800', color: '#FFFFFF' }}>{currentBike.name}</Text>. Our concierge will message or call you shortly.
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.form}>
+                {/* Machine Selector Section */}
+                <View style={styles.sectionWrap}>
+                  <View style={styles.sectionHeaderRow}>
+                    <Text style={styles.sectionLabel}>CHOOSE MOTORCYCLE</Text>
+                    <Text style={styles.sectionHint}>Selected: {currentBike.name}</Text>
                   </View>
-                  <Text style={styles.title}>WhatsApp Concierge</Text>
-                  <Text style={styles.subtitle}>
-                    Instant verified response from our 24/7 fleet team (+91 98765 43210)
-                  </Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.bikeChipsContent}
+                  >
+                    {BIKES_DATA.map((b) => {
+                      const active = b.id === bikeId;
+                      return (
+                        <TouchableOpacity
+                          key={b.id}
+                          style={[styles.bikeChip, active && styles.bikeChipActive]}
+                          onPress={() => setBikeId(b.id)}
+                          activeOpacity={0.8}
+                        >
+                          <View style={styles.chipTopRow}>
+                            {active && <Check size={12} color="#10B981" style={{ marginRight: 4 }} />}
+                            <Text style={[styles.bikeChipText, active && styles.bikeChipTextActive]}>
+                              {b.name}
+                            </Text>
+                          </View>
+                          <Text style={[styles.bikeChipPrice, active && styles.bikeChipPriceActive]}>
+                            ₹{b.pricePerDay.toLocaleString()}/day
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
                 </View>
 
-                {submitted ? (
-                  <View style={styles.submittedWrap}>
-                    <View style={styles.checkCircle}>
-                      <CheckCircle2 size={42} color="#10B981" />
+                {/* Rider Inputs with Clean Placeholders Only */}
+                <View style={styles.inputsGrid}>
+                  <View style={styles.inputGroup}>
+                    <View style={styles.labelRow}>
+                      <User size={13} color="#94A3B8" />
+                      <Text style={styles.label}>FULL NAME</Text>
                     </View>
-                    <Text style={styles.submittedTitle}>Enquiry Submitted!</Text>
-                    <Text style={styles.submittedSubtitle}>
-                      We have received your enquiry for <Text style={{ fontWeight: '800', color: '#FFFFFF' }}>{currentBike.name}</Text>. Our concierge representative will connect with you right away.
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter your full name"
+                      placeholderTextColor="#475569"
+                      value={fullName}
+                      onChangeText={setFullName}
+                    />
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <View style={styles.labelRow}>
+                      <Phone size={13} color="#94A3B8" />
+                      <Text style={styles.label}>WHATSAPP PHONE NUMBER</Text>
+                    </View>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="e.g. 9876543210"
+                      placeholderTextColor="#475569"
+                      keyboardType="phone-pad"
+                      value={phone}
+                      onChangeText={setPhone}
+                      maxLength={15}
+                    />
+                  </View>
+
+                  {/* Dates Row - 2 Columns */}
+                  <View style={styles.datesRow}>
+                    <View style={[styles.inputGroup, { flex: 1 }]}>
+                      <View style={styles.labelRow}>
+                        <Calendar size={13} color="#94A3B8" />
+                        <Text style={styles.label}>START DATE</Text>
+                      </View>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="DD/MM/YYYY"
+                        placeholderTextColor="#475569"
+                        value={startDate}
+                        onChangeText={setStartDate}
+                      />
+                    </View>
+
+                    <View style={[styles.inputGroup, { flex: 1 }]}>
+                      <View style={styles.labelRow}>
+                        <Calendar size={13} color="#94A3B8" />
+                        <Text style={styles.label}>RETURN DATE</Text>
+                      </View>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="DD/MM/YYYY"
+                        placeholderTextColor="#475569"
+                        value={endDate}
+                        onChangeText={setEndDate}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Message Field */}
+                  <View style={styles.inputGroup}>
+                    <View style={styles.labelRow}>
+                      <MessageSquare size={13} color="#94A3B8" />
+                      <Text style={styles.label}>SPECIAL REQUIREMENTS (OPTIONAL)</Text>
+                    </View>
+                    <TextInput
+                      style={[styles.input, styles.textArea]}
+                      placeholder="Need extra helmet, doorstep delivery, or custom touring advice..."
+                      placeholderTextColor="#475569"
+                      multiline
+                      numberOfLines={3}
+                      value={message}
+                      onChangeText={setMessage}
+                    />
+                  </View>
+                </View>
+
+                {/* Actions Container - Properly Sized Buttons */}
+                <View style={styles.actionContainer}>
+                  {/* WhatsApp Primary CTA Button - Refined Luxury Green */}
+                  <TouchableOpacity
+                    style={styles.whatsAppBtn}
+                    onPress={handleWhatsAppRedirect}
+                    activeOpacity={0.85}
+                  >
+                    <WhatsAppSvgIcon size={19} color="#FFFFFF" />
+                    <Text style={styles.whatsAppBtnText}>Send Enquiry on WhatsApp</Text>
+                  </TouchableOpacity>
+
+                  {/* Secondary Direct Submit Button - Elegant Understated Outline */}
+                  <TouchableOpacity
+                    style={styles.submitBtn}
+                    onPress={handleSubmit}
+                    activeOpacity={0.8}
+                  >
+                    <Send size={14} color="#38BDF8" />
+                    <Text style={styles.submitBtnText}>Request Callback Instead</Text>
+                  </TouchableOpacity>
+
+                  {/* Trust Badge */}
+                  <View style={styles.trustFooter}>
+                    <ShieldCheck size={13} color="#10B981" />
+                    <Text style={styles.trustText}>
+                      Instant response • Zero spam • Verified Road Eagle fleet
                     </Text>
                   </View>
-                ) : (
-                  <View style={styles.form}>
-                    {/* Machine Selector Section */}
-                    <View style={styles.sectionWrap}>
-                      <Text style={styles.sectionLabel}>SELECTED MOTORBIKE</Text>
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.bikeChipsContent}
-                      >
-                        {BIKES_DATA.map((b) => {
-                          const active = b.id === bikeId;
-                          return (
-                            <TouchableOpacity
-                              key={b.id}
-                              style={[styles.bikeChip, active && styles.bikeChipActive]}
-                              onPress={() => setBikeId(b.id)}
-                              activeOpacity={0.8}
-                            >
-                              <Text style={[styles.bikeChipText, active && styles.bikeChipTextActive]}>
-                                {b.name}
-                              </Text>
-                              <Text style={[styles.bikeChipPrice, active && styles.bikeChipPriceActive]}>
-                                ₹{b.pricePerDay}/day
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </ScrollView>
-                    </View>
-
-                    {/* Rider Inputs with Clean Placeholders Only */}
-                    <View style={styles.inputGroup}>
-                      <View style={styles.labelRow}>
-                        <User size={13} color="#94A3B8" />
-                        <Text style={styles.label}>FULL NAME</Text>
-                      </View>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="e.g. Rahul Verma"
-                        placeholderTextColor="#475569"
-                        value={fullName}
-                        onChangeText={setFullName}
-                      />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                      <View style={styles.labelRow}>
-                        <Phone size={13} color="#94A3B8" />
-                        <Text style={styles.label}>CONTACT PHONE NUMBER</Text>
-                      </View>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="10-digit mobile number"
-                        placeholderTextColor="#475569"
-                        keyboardType="phone-pad"
-                        value={phone}
-                        onChangeText={setPhone}
-                        maxLength={15}
-                      />
-                    </View>
-
-                    {/* Dates Row */}
-                    <View style={styles.datesRow}>
-                      <View style={[styles.inputGroup, { flex: 1 }]}>
-                        <View style={styles.labelRow}>
-                          <Calendar size={13} color="#94A3B8" />
-                          <Text style={styles.label}>START DATE</Text>
-                        </View>
-                        <TextInput
-                          style={styles.input}
-                          placeholder="MM/DD/YYYY"
-                          placeholderTextColor="#475569"
-                          value={startDate}
-                          onChangeText={setStartDate}
-                        />
-                      </View>
-
-                      <View style={[styles.inputGroup, { flex: 1 }]}>
-                        <View style={styles.labelRow}>
-                          <Calendar size={13} color="#94A3B8" />
-                          <Text style={styles.label}>END DATE</Text>
-                        </View>
-                        <TextInput
-                          style={styles.input}
-                          placeholder="MM/DD/YYYY"
-                          placeholderTextColor="#475569"
-                          value={endDate}
-                          onChangeText={setEndDate}
-                        />
-                      </View>
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                      <View style={styles.labelRow}>
-                        <MessageSquare size={13} color="#94A3B8" />
-                        <Text style={styles.label}>SPECIAL REQUIREMENTS (OPTIONAL)</Text>
-                      </View>
-                      <TextInput
-                        style={[styles.input, styles.textArea]}
-                        placeholder="Need extra helmet, doorstep delivery, or custom touring advice..."
-                        placeholderTextColor="#475569"
-                        multiline
-                        numberOfLines={3}
-                        value={message}
-                        onChangeText={setMessage}
-                      />
-                    </View>
-
-                    {/* WhatsApp Primary CTA Button - Refined Luxury Green */}
-                    <TouchableOpacity
-                      style={styles.whatsAppBtn}
-                      onPress={handleWhatsAppRedirect}
-                      activeOpacity={0.85}
-                    >
-                      <WhatsAppSvgIcon size={19} color="#FFFFFF" />
-                      <Text style={styles.whatsAppBtnText}>Chat Directly on WhatsApp</Text>
-                    </TouchableOpacity>
-
-                    {/* Secondary Direct Submit Button - Elegant Outline */}
-                    <TouchableOpacity
-                      style={styles.submitBtn}
-                      onPress={handleSubmit}
-                      activeOpacity={0.8}
-                    >
-                      <Send size={15} color="#38BDF8" />
-                      <Text style={styles.submitBtnText}>Submit Callback Request</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </ScrollView>
-            </View>
-          </TouchableWithoutFeedback>
+                </View>
+              </View>
+            )}
+          </ScrollView>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
     </Modal>
   );
 }
@@ -264,88 +293,130 @@ export default function EnquiryModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(5, 11, 20, 0.85)',
+    backgroundColor: 'rgba(5, 11, 20, 0.82)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
   },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
   modalCard: {
-    backgroundColor: '#0F172A',
-    borderRadius: RADIUS.xl,
+    backgroundColor: '#0C1322',
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
-    padding: 24,
-    width: '100%',
-    maxWidth: 480,
-    maxHeight: '92%',
-    position: 'relative',
+    paddingHorizontal: 24,
+    paddingTop: 22,
+    paddingBottom: 22,
+    width: '94%',
+    maxWidth: 500,
+    maxHeight: '90%',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.6,
-    shadowRadius: 24,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.65,
+    shadowRadius: 30,
+    elevation: 12,
+  },
+  scrollContent: {
+    paddingBottom: 4,
   },
   closeBtn: {
     position: 'absolute',
-    top: 16,
-    right: 16,
+    top: 14,
+    right: 14,
     width: 32,
     height: 32,
-    borderRadius: RADIUS.full,
+    borderRadius: 16,
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
+    zIndex: 20,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
-    paddingTop: 4,
+    marginBottom: 18,
+    paddingTop: 2,
   },
   waIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#10B981',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
     borderWidth: 2,
-    borderColor: 'rgba(167, 243, 208, 0.4)',
+    borderColor: 'rgba(167, 243, 208, 0.45)',
     shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowRadius: 10,
+    elevation: 5,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
     color: '#FFFFFF',
     marginBottom: 4,
     letterSpacing: -0.3,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 12.5,
+    fontSize: 12,
     color: '#94A3B8',
     textAlign: 'center',
-    maxWidth: 360,
-    lineHeight: 18,
+    maxWidth: 380,
+    lineHeight: 17,
+    marginBottom: 8,
+  },
+  supportBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.25)',
+  },
+  pulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+  },
+  supportBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#34D399',
+    letterSpacing: 0.2,
   },
   form: {
     gap: 14,
   },
   sectionWrap: {
-    marginBottom: 4,
+    marginBottom: 2,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   sectionLabel: {
-    fontSize: 10.5,
+    fontSize: 10,
     fontWeight: '800',
     color: '#38BDF8',
-    letterSpacing: 1,
-    marginBottom: 8,
+    letterSpacing: 0.8,
+  },
+  sectionHint: {
+    fontSize: 10.5,
+    fontWeight: '600',
+    color: '#94A3B8',
   },
   bikeChipsContent: {
     gap: 8,
@@ -354,15 +425,19 @@ const styles = StyleSheet.create({
   bikeChip: {
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.09)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: RADIUS.md,
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   bikeChipActive: {
-    backgroundColor: 'rgba(2, 132, 199, 0.2)',
-    borderColor: '#38BDF8',
+    backgroundColor: 'rgba(16, 185, 129, 0.14)',
+    borderColor: '#10B981',
+  },
+  chipTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   bikeChipText: {
     fontSize: 12,
@@ -379,11 +454,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   bikeChipPriceActive: {
-    color: '#38BDF8',
-    fontWeight: '600',
+    color: '#34D399',
+    fontWeight: '700',
+  },
+  inputsGrid: {
+    gap: 12,
   },
   inputGroup: {
-    gap: 6,
+    gap: 5,
   },
   labelRow: {
     flexDirection: 'row',
@@ -391,42 +469,49 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   label: {
-    fontSize: 10.5,
+    fontSize: 10,
     fontWeight: '800',
     color: '#94A3B8',
-    letterSpacing: 0.8,
+    letterSpacing: 0.6,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: '#111A2E',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(255, 255, 255, 0.09)',
     borderRadius: RADIUS.md,
     paddingHorizontal: 14,
-    height: 44,
+    height: 42,
     color: '#FFFFFF',
     fontSize: 13,
   },
   textArea: {
-    height: 72,
+    height: 68,
     textAlignVertical: 'top',
     paddingTop: 10,
   },
   datesRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
+  },
+  actionContainer: {
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 8,
   },
   whatsAppBtn: {
     backgroundColor: '#10B981',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 9,
+    gap: 8,
     borderRadius: RADIUS.full,
-    paddingVertical: 13,
-    marginTop: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    width: '100%',
+    maxWidth: 360,
     shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 4,
   },
@@ -434,33 +519,46 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   submitBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.35)',
+    borderColor: 'rgba(56, 189, 248, 0.3)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 7,
     borderRadius: RADIUS.full,
-    paddingVertical: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    width: '100%',
+    maxWidth: 360,
   },
   submitBtnText: {
     color: '#38BDF8',
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '700',
+  },
+  trustFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  trustText: {
+    fontSize: 10.5,
+    color: '#64748B',
   },
   submittedWrap: {
     alignItems: 'center',
-    paddingVertical: 36,
-    gap: 12,
+    paddingVertical: 32,
+    gap: 10,
   },
   checkCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: 'rgba(16, 185, 129, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -469,15 +567,15 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   submittedTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
     color: '#FFFFFF',
   },
   submittedSubtitle: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: '#94A3B8',
     textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: 20,
+    lineHeight: 19,
+    paddingHorizontal: 16,
   },
 });
