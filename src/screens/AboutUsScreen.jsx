@@ -14,31 +14,33 @@ import {
   ShieldCheck,
   Bike,
   ArrowRight,
-  Compass,
 } from 'lucide-react-native';
 import { IMAGES } from '../assets/images';
-import { COLORS, RADIUS, SHADOWS } from '../theme/colors';
+import { COLORS, RADIUS } from '../theme/colors';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function AboutUsScreen({ navigation }) {
+  const { t } = useLanguage();
+
   const values = [
     {
-      title: 'Affordability',
-      desc: 'Premium motorcycles and scooters at competitive, transparent day rates with zero hidden charges.',
+      title: t('about.value1Title'),
+      desc: t('about.value1Desc'),
       icon: Award,
     },
     {
-      title: 'Unmatched Satisfaction',
-      desc: 'Dedicated concierge team focused on making your road adventure effortless and memorable.',
+      title: t('about.value2Title'),
+      desc: t('about.value2Desc'),
       icon: Heart,
     },
     {
-      title: 'Mechanical Precision',
-      desc: 'In-house certified mechanics performing rigorous 24-point inspections on every vehicle before departure.',
+      title: t('about.value3Title'),
+      desc: t('about.value3Desc'),
       icon: Wrench,
     },
     {
-      title: 'Rider Safety First',
-      desc: 'Complimentary certified helmets, comprehensive insurance coverage, and 24/7 roadside assistance.',
+      title: t('about.value4Title'),
+      desc: t('about.value4Desc'),
       icon: ShieldCheck,
     },
   ];
@@ -52,30 +54,28 @@ export default function AboutUsScreen({ navigation }) {
       <View style={styles.centerContainer}>
         {/* Header Title */}
         <View style={styles.header}>
-          <Text style={styles.pretitle}>ABOUT THE ROAD EAGLE</Text>
-          <Text style={styles.title}>Redefining Two-Wheeled Freedom</Text>
-          <Text style={styles.subtitle}>
-            Born out of a genuine obsession with motorcycling and exploration. We are building India's most dependable, rider-centric motorcycle rental fleet.
-          </Text>
+          <Text style={styles.pretitle}>{t('about.pretitle')}</Text>
+          <Text style={styles.title}>{t('about.title')}</Text>
+          <Text style={styles.subtitle}>{t('about.subtitle')}</Text>
         </View>
 
         {/* Stats Row */}
         <View style={styles.statsGrid}>
           <View style={styles.statBox}>
-            <Text style={styles.statNum}>50+</Text>
-            <Text style={styles.statLabel}>PREMIUM FLEET</Text>
+            <Text style={styles.statNum}>{t('about.stat1Num')}</Text>
+            <Text style={styles.statLabel}>{t('about.stat1Label')}</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNum}>10K+</Text>
-            <Text style={styles.statLabel}>HAPPY RIDERS</Text>
+            <Text style={styles.statNum}>{t('about.stat2Num')}</Text>
+            <Text style={styles.statLabel}>{t('about.stat2Label')}</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNum}>4.9★</Text>
-            <Text style={styles.statLabel}>GOOGLE RATING</Text>
+            <Text style={styles.statNum}>{t('about.stat3Num')}</Text>
+            <Text style={styles.statLabel}>{t('about.stat3Label')}</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNum}>24/7</Text>
-            <Text style={styles.statLabel}>ON-ROAD SUPPORT</Text>
+            <Text style={styles.statNum}>{t('about.stat4Num')}</Text>
+            <Text style={styles.statLabel}>{t('about.stat4Label')}</Text>
           </View>
         </View>
 
@@ -87,20 +87,19 @@ export default function AboutUsScreen({ navigation }) {
             resizeMode="cover"
           />
           <View style={styles.storyContent}>
-            <Text style={styles.storyPretitle}>OUR FOUNDATION</Text>
-            <Text style={styles.storyTitle}>No Shortcuts. No Surprises.</Text>
+            <Text style={styles.storyPretitle}>{t('about.foundationPretitle')}</Text>
+            <Text style={styles.storyTitle}>{t('about.foundationTitle')}</Text>
             <Text style={styles.storyText}>
-              Too many bike rentals in India deliver poorly maintained, noisy machines with uncommunicated charges and withheld security deposits. The Road Eagle was founded to change this completely.{'\n\n'}
-              Every cruiser, commuter, and superbike in our garage is company-owned, rigorously inspected by certified mechanics, and cleaned prior to handover. We believe renting a machine should feel as trustworthy and exciting as taking delivery of your own showroom bike.
+              {t('about.foundationText1')}{'\n\n'}{t('about.foundationText2')}
             </Text>
           </View>
         </View>
 
-        {/* Values 2x2 Grid (Proper Columns) */}
+        {/* Values 2x2 Grid */}
         <View style={styles.valuesSection}>
-          <Text style={styles.sectionTitle}>What Sets Us Apart</Text>
+          <Text style={styles.sectionTitle}>{t('about.whatSetsUsApart')}</Text>
           <Text style={styles.sectionSubtitle}>
-            Our core operating principles built around trust, transparency, and mechanical excellence.
+            {t('about.whatSetsUsApartSub')}
           </Text>
 
           <View style={styles.valuesGrid}>
@@ -119,7 +118,7 @@ export default function AboutUsScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Browse Fleet Button - Sober Sapphire Blue & Centered */}
+        {/* Browse Fleet Button */}
         <View style={styles.ctaBtnWrapper}>
           <TouchableOpacity
             style={styles.ctaBtn}
@@ -127,7 +126,7 @@ export default function AboutUsScreen({ navigation }) {
             activeOpacity={0.8}
           >
             <Bike size={18} color="#FFFFFF" />
-            <Text style={styles.ctaBtnText}>Browse Available Fleet</Text>
+            <Text style={styles.ctaBtnText}>{t('about.browseFleetBtn')}</Text>
             <ArrowRight size={16} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
