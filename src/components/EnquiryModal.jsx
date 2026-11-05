@@ -151,7 +151,7 @@ export default function EnquiryModal({
               {/* Header with WhatsApp Luxury Pill */}
               <View style={styles.header}>
                 <View style={styles.waIconCircle}>
-                  <WhatsAppSvgIcon size={26} color="#FFFFFF" />
+                  <WhatsAppIcon size={26} color="#FFFFFF" />
                 </View>
                 <Text style={styles.title}>
                   {t('enquiry.conciergeTitle', 'WhatsApp Concierge')}

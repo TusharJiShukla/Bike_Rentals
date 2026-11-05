@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useState, useRef, Component } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
@@ -15,6 +15,72 @@ import Toast from './src/components/Toast';
 
 import { BIKES_DATA } from './src/data/bikes';
 import { COLORS } from './src/theme/colors';
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('App ErrorBoundary caught error:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={errorStyles.container}>
+          <Text style={errorStyles.title}>The Road Eagle</Text>
+          <Text style={errorStyles.sub}>Something went wrong while loading this screen.</Text>
+          <TouchableOpacity
+            style={errorStyles.reloadBtn}
+            onPress={() => {
+              this.setState({ hasError: false });
+              if (typeof window !== 'undefined') window.location.reload();
+            }}
+          >
+            <Text style={errorStyles.reloadText}>Reload App</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const errorStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#050B14',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#38BDF8',
+    marginBottom: 8,
+  },
+  sub: {
+    fontSize: 14,
+    color: '#94A3B8',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  reloadBtn: {
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+    borderRadius: 999,
+  },
+  reloadText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+});
 
 export default function App() {
   const navigationRef = useRef(null);
@@ -100,64 +166,67 @@ export default function App() {
   };
 
   return (
-    <LanguageProvider>
-      <SafeAreaProvider style={styles.root}>
-        <StatusBar style="light" backgroundColor={COLORS.bgDark} />
-        <NavigationContainer ref={navigationRef}>
-          <View style={styles.appContainer}>
-            <RootNavigator
-              user={user}
-              onOpenAuth={() => setIsAuthOpen(true)}
-              onOpenWhatsApp={handleOpenWhatsApp}
-              onOpenQuote={handleOpenQuote}
-              onSelectBike={handleSelectBike}
-              onStartBooking={handleStartBooking}
-              onOpenBookModal={handleOpenBookModal}
-              onShowToast={showToast}
-            />
+    <ErrorBoundary>
+      <LanguageProvider>
+        <SafeAreaProvider style={styles.root}>
+          <StatusBar style="light" backgroundColor={COLORS.bgDark} />
+          <NavigationContainer ref={navigationRef}>
+            <View style={styles.appContainer}>
+              <RootNavigator
+                user={user}
+                onOpenAuth={() => setIsAuthOpen(true)}
+                onOpenWhatsApp={handleOpenWhatsApp}
+                onOpenQuote={handleOpenQuote}
+                onSelectBike={handleSelectBike}
+                onStartBooking={handleStartBooking}
+                onOpenBookModal={handleOpenBookModal}
+                onShowToast={showToast}
+              />
 
-            {/* Floating WhatsApp Quick Action Button */}
-            <FloatingWhatsApp
-              onPress={() => handleOpenWhatsApp()}
-              phone="919876543210"
-            />
+              {/* Floating WhatsApp Quick Action Button */}
+              <FloatingWhatsApp
+                onPress={() => handleOpenWhatsApp()}
+                phone="919876543210"
+              />
 
-            {/* Action Modals */}
-            <BookDropdownModal
-              visible={isBookModalOpen}
-              onClose={() => setIsBookModalOpen(false)}
-              bike={bookModalBike}
-              onStartBooking={handleStartBooking}
-              onShowToast={showToast}
-            />
+              {/* Action Modals */}
+              <BookDropdownModal
+                visible={isBookModalOpen}
+                onClose={() => setIsBookModalOpen(false)}
+                bike={bookModalBike}
+                onStartBooking={handleStartBooking}
+                onShowToast={showToast}
+              />
 
-            <EnquiryModal
-              visible={isEnquiryOpen}
-              onClose={() => setIsEnquiryOpen(false)}
-              selectedBike={enquiryBike}
-              onShowToast={showToast}
-            />
+              <EnquiryModal
+                visible={isEnquiryOpen}
+                onClose={() => setIsEnquiryOpen(false)}
+                selectedBike={enquiryBike}
+                onShowToast={showToast}
+              />
 
-            <AuthModal
-              visible={isAuthOpen}
-              onClose={() => setIsAuthOpen(false)}
-              onLogin={handleUserUpdate}
-              user={user}
-            />
+              <AuthModal
+                visible={isAuthOpen}
+                onClose={() => setIsAuthOpen(false)}
+                onLogin={handleUserUpdate}
+                user={user}
+                onShowToast={showToast}
+              />
 
-            <QuoteModal
-              visible={isQuoteOpen}
-              onClose={() => setIsQuoteOpen(false)}
-              bookingData={quoteData}
-              bike={selectedBike}
-            />
+              <QuoteModal
+                visible={isQuoteOpen}
+                onClose={() => setIsQuoteOpen(false)}
+                data={quoteData}
+                onShowToast={showToast}
+              />
 
-            {/* Floating Toast Notification Layer */}
-            <Toast toasts={toasts} />
-          </View>
-        </NavigationContainer>
-      </SafeAreaProvider>
-    </LanguageProvider>
+              {/* Toast Alerts */}
+              <Toast toasts={toasts} onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
+            </View>
+          </NavigationContainer>
+        </SafeAreaProvider>
+      </LanguageProvider>
+    </ErrorBoundary>
   );
 }
 
