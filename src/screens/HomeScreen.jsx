@@ -124,7 +124,7 @@ export default function HomeScreen({
               onPress={onOpenWhatsApp}
               activeOpacity={0.8}
             >
-              <WhatsAppIcon size={18} color="#25D366" />
+              <WhatsAppIcon size={14} color="#FFFFFF" withCircle circleSize={24} />
               <Text style={styles.btnWhatsAppDarkText}>{t('hero.whatsappEnquiry', 'WhatsApp Enquiry')}</Text>
             </TouchableOpacity>
           </View>
@@ -435,7 +435,7 @@ export default function HomeScreen({
                 onPress={onOpenWhatsApp}
                 activeOpacity={0.8}
               >
-                <WhatsAppIcon size={18} color="#FFFFFF" />
+                <WhatsAppIcon size={14} color="#FFFFFF" withCircle circleSize={24} />
                 <Text style={styles.ctaWhatsAppBtnText}>{t('hero.whatsappEnquiry', 'WhatsApp Concierge')}</Text>
               </TouchableOpacity>
             </View>

@@ -165,7 +165,7 @@ export default function BikeDetailsScreen({
                 onPress={() => onOpenWhatsApp(bike)}
                 activeOpacity={0.8}
               >
-                <WhatsAppIcon size={16} color="#FFFFFF" />
+                <WhatsAppIcon size={14} color="#FFFFFF" withCircle circleSize={24} />
                 <Text style={styles.whatsAppBtnText}>Enquire on WhatsApp</Text>
               </TouchableOpacity>
             </View>
