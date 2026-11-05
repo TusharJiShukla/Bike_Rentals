@@ -7,8 +7,6 @@ import {
   Image,
   TextInput,
   TouchableOpacity,
-  Modal,
-  FlatList,
   ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
@@ -30,10 +28,11 @@ import {
   Mail,
 } from 'lucide-react-native';
 import { BIKES_DATA } from '../data/bikes';
-import { COUNTRY_CODES } from '../data/countries';
 import { COLORS, RADIUS, SHADOWS } from '../theme/colors';
 import { useLanguage } from '../i18n/LanguageContext';
 import CalendarPickerModal from '../components/CalendarPickerModal';
+import PhoneInput from '../components/PhoneInput';
+import { validateEmail, validatePhone } from '../utils/validation';
 
 const PICKUP_TIMES = [
   '09:00 AM (Hub Opens)',
@@ -84,15 +83,18 @@ export default function BookingScreen({
   const [riderName, setRiderName] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
   const [riderPhone, setRiderPhone] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [riderEmail, setRiderEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [riderDob, setRiderDob] = useState('');
-  const [isCountryModalOpen, setIsCountryModalOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
       setRiderName('');
       setRiderPhone('');
+      setPhoneError('');
       setRiderEmail('');
+      setEmailError('');
       setRiderDob('');
       setPickupDate('');
       setPickupTime('');
@@ -101,6 +103,8 @@ export default function BookingScreen({
     } else {
       if (user.name) setRiderName(user.name);
       if (user.email) setRiderEmail(user.email);
+      if (user.phone) setRiderPhone(user.phone);
+      if (user.countryCode) setCountryCode(user.countryCode);
     }
   }, [user]);
 
@@ -170,20 +174,23 @@ export default function BookingScreen({
       return;
     }
 
-    const cleanPhone = riderPhone.replace(/\D/g, '');
-    if (countryCode === '+91' && cleanPhone.length !== 10) {
-      if (onShowToast) onShowToast(isHindi ? 'कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें।' : 'Please enter a valid 10-digit mobile number.');
-      return;
-    } else if (cleanPhone.length < 7) {
-      if (onShowToast) onShowToast(isHindi ? 'कृपया वैध मोबाइल नंबर दर्ज करें।' : 'Please enter a valid mobile number.');
+    // Phone Validation with Country Code & exactly 10 digits
+    const phoneCheck = validatePhone(riderPhone, countryCode);
+    if (!phoneCheck.isValid) {
+      setPhoneError(isHindi ? phoneCheck.errorHi : phoneCheck.error);
+      if (onShowToast) onShowToast(isHindi ? phoneCheck.errorHi : phoneCheck.error);
       return;
     }
+    setPhoneError('');
 
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!riderEmail.trim() || !emailRegex.test(riderEmail.trim())) {
-      if (onShowToast) onShowToast(isHindi ? 'कृपया वैध ईमेल दर्ज करें।' : 'Please enter a valid email address.');
+    // Email Validation ensuring '@' and '.domain' (e.g. name@example.com)
+    const emailCheck = validateEmail(riderEmail);
+    if (!emailCheck.isValid) {
+      setEmailError(isHindi ? emailCheck.errorHi : emailCheck.error);
+      if (onShowToast) onShowToast(isHindi ? emailCheck.errorHi : emailCheck.error);
       return;
     }
+    setEmailError('');
 
     setIsProcessing(true);
     setTimeout(() => {
@@ -213,7 +220,7 @@ export default function BookingScreen({
         deposit: securityDeposit,
         total: totalPayable,
         riderName: riderName || 'Rider',
-        riderPhone: countryCode + riderPhone,
+        riderPhone: `${countryCode} ${riderPhone}`,
         riderEmail: riderEmail || 'rider@example.com',
       });
     }
@@ -473,35 +480,33 @@ export default function BookingScreen({
                     />
                   </View>
 
+                  {/* Phone Number and Email Row */}
                   <View style={styles.step2Row}>
-                    <View style={{ flex: 1 }}>
+                    {/* Unified PhoneInput with Country Code + 10-Digit Validation */}
+                    <View style={{ flex: 1.1 }}>
                       <View style={styles.fieldLabelRow}>
                         <Phone size={13} color="#94A3B8" />
                         <Text style={styles.step2Label}>
                           {t('booking.riderPhone', 'PHONE NUMBER')}
                         </Text>
                       </View>
-                      <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
-                        <TouchableOpacity
-                          style={styles.countryBtn}
-                          onPress={() => setIsCountryModalOpen(true)}
-                          activeOpacity={0.8}
-                        >
-                          <Text style={styles.countryBtnText}>{countryCode}</Text>
-                          <ChevronDown size={14} color="#94A3B8" />
-                        </TouchableOpacity>
-                        <TextInput
-                          style={[styles.step2Input, { flex: 1 }]}
-                          value={riderPhone}
-                          onChangeText={(text) => setRiderPhone(text.replace(/\D/g, ''))}
-                          placeholder={t('booking.riderPhonePlaceholder', '10-digit mobile number')}
-                          placeholderTextColor="#475569"
-                          keyboardType="phone-pad"
-                          maxLength={15}
-                        />
-                      </View>
+                      <PhoneInput
+                        countryCode={countryCode}
+                        onCountryCodeChange={(code) => {
+                          setCountryCode(code);
+                          setPhoneError('');
+                        }}
+                        value={riderPhone}
+                        onChangeText={(num) => {
+                          setRiderPhone(num);
+                          if (phoneError) setPhoneError('');
+                        }}
+                        placeholder={t('booking.riderPhonePlaceholder', '10-digit mobile number')}
+                        error={phoneError}
+                      />
                     </View>
 
+                    {/* Email Input with @ and domain validation */}
                     <View style={{ flex: 1.2 }}>
                       <View style={styles.fieldLabelRow}>
                         <Mail size={13} color="#94A3B8" />
@@ -510,14 +515,23 @@ export default function BookingScreen({
                         </Text>
                       </View>
                       <TextInput
-                        style={styles.step2Input}
+                        style={[
+                          styles.step2Input,
+                          emailError && styles.inputErrorBorder,
+                        ]}
                         value={riderEmail}
-                        onChangeText={setRiderEmail}
+                        onChangeText={(email) => {
+                          setRiderEmail(email);
+                          if (emailError) setEmailError('');
+                        }}
                         placeholder={t('booking.riderEmailPlaceholder', 'name@example.com')}
                         placeholderTextColor="#475569"
                         keyboardType="email-address"
                         autoCapitalize="none"
                       />
+                      {emailError ? (
+                        <Text style={styles.errorSubText}>{emailError}</Text>
+                      ) : null}
                     </View>
                   </View>
 
@@ -786,42 +800,6 @@ export default function BookingScreen({
           setCalendarTarget(null);
         }}
       />
-
-      {/* Country Code Modal */}
-      <Modal
-        visible={isCountryModalOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsCountryModalOpen(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.countryModalCard}>
-            <View style={styles.countryModalHeader}>
-              <Text style={styles.countryModalTitle}>Select Country Code</Text>
-              <TouchableOpacity onPress={() => setIsCountryModalOpen(false)}>
-                <X size={18} color="#94A3B8" />
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={COUNTRY_CODES}
-              keyExtractor={(item) => item.code + item.name}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.countryItem}
-                  onPress={() => {
-                    setCountryCode(item.code);
-                    setIsCountryModalOpen(false);
-                  }}
-                >
-                  <Text style={styles.countryItemText}>
-                    {item.name} ({item.code})
-                  </Text>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -1132,25 +1110,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 13,
   },
+  inputErrorBorder: {
+    borderColor: 'rgba(225, 29, 72, 0.6)',
+    backgroundColor: 'rgba(225, 29, 72, 0.05)',
+  },
+  errorSubText: {
+    color: '#FDA4AF',
+    fontSize: 11,
+    marginTop: 4,
+  },
   step2Row: {
     flexDirection: 'row',
     gap: 12,
-  },
-  countryBtn: {
-    backgroundColor: '#111A2E',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: RADIUS.md,
-    paddingHorizontal: 10,
-    height: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  countryBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12.5,
-    fontWeight: '700',
   },
   paymentMethodsRow: {
     flexDirection: 'row',
@@ -1405,43 +1376,5 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     fontSize: 13,
     fontWeight: '600',
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  countryModalCard: {
-    backgroundColor: '#0F1A2E',
-    borderRadius: RADIUS.lg,
-    width: '100%',
-    maxWidth: 380,
-    maxHeight: '70%',
-    padding: 16,
-  },
-  countryModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
-  },
-  countryModalTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  countryItem: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.04)',
-  },
-  countryItemText: {
-    fontSize: 13,
-    color: '#CBD5E1',
   },
 });

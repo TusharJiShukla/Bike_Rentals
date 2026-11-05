@@ -11,9 +11,11 @@ import {
   ScrollView,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { X, ShieldCheck, Calendar, AlertTriangle, ArrowRight, ChevronDown } from 'lucide-react-native';
+import { X, ShieldCheck, Calendar, AlertTriangle, ArrowRight, ChevronDown, User, Mail, Phone } from 'lucide-react-native';
 import { COLORS, RADIUS, SHADOWS } from '../theme/colors';
 import { useLanguage } from '../i18n/LanguageContext';
+import PhoneInput from './PhoneInput';
+import { validateEmail, validatePhone } from '../utils/validation';
 
 function GoogleIcon({ size = 18 }) {
   return (
@@ -86,6 +88,8 @@ export default function AuthModal({
   const [activeTab, setActiveTab] = useState('signin'); // 'signin' | 'signup'
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
+  const [phone, setPhone] = useState('');
 
   // Structured Date of Birth Selection
   const [dobDay, setDobDay] = useState('');
@@ -104,6 +108,8 @@ export default function AuthModal({
   const resetAllFields = () => {
     setEmail('');
     setName('');
+    setCountryCode('+91');
+    setPhone('');
     setDobDay('');
     setDobMonth('');
     setDobYear('');
@@ -153,23 +159,27 @@ export default function AuthModal({
     return age;
   };
 
-  const validateEmail = (emailStr) => {
-    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return re.test(String(emailStr || '').trim().toLowerCase());
-  };
-
   const handleSendCode = () => {
     setErrorMsg('');
     setOtp('');
 
-    if (!email || !validateEmail(email)) {
-      setErrorMsg(t('auth.validEmailErr', 'Please enter a valid email address (e.g. name@example.com)'));
+    // Strict Email validation (@ and .domain)
+    const emailCheck = validateEmail(email);
+    if (!emailCheck.isValid) {
+      setErrorMsg(isHindi ? emailCheck.errorHi : emailCheck.error);
       return;
     }
 
     if (activeTab === 'signup') {
       if (!name.trim()) {
         setErrorMsg(t('auth.validNameErr', 'Please enter your full name.'));
+        return;
+      }
+
+      // Phone Number validation with Country Code and exactly 10 digits
+      const phoneCheck = validatePhone(phone, countryCode);
+      if (!phoneCheck.isValid) {
+        setErrorMsg(isHindi ? phoneCheck.errorHi : phoneCheck.error);
         return;
       }
 
@@ -227,6 +237,8 @@ export default function AuthModal({
       newUser = {
         name: name.trim(),
         email: email.trim(),
+        phone: phone.trim(),
+        countryCode,
         dob: formattedDob,
         loginMethod: 'email',
         avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
@@ -242,6 +254,8 @@ export default function AuthModal({
     const googleUser = {
       name: isHindi ? 'राइडर (गूगल)' : 'Google Rider',
       email: 'rider.google@gmail.com',
+      phone: '9876543210',
+      countryCode: '+91',
       dob: '1998-05-12',
       loginMethod: 'google',
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
@@ -286,6 +300,11 @@ export default function AuthModal({
                     </Text>
                     <Text style={styles.userNameText}>{user.name}</Text>
                     <Text style={styles.userEmailText}>{user.email}</Text>
+                    {user.phone ? (
+                      <Text style={styles.userPhoneText}>
+                        {user.countryCode || '+91'} {user.phone}
+                      </Text>
+                    ) : null}
 
                     <View style={styles.verifiedBadge}>
                       <ShieldCheck size={16} color={COLORS.statusAvailable} />
@@ -353,13 +372,16 @@ export default function AuthModal({
                     ) : null}
 
                     {!otpSent ? (
-                      /* Form: Name, Email, DOB Selectors */
+                      /* Form: Name, Email, Phone, DOB Selectors */
                       <View>
                         {activeTab === 'signup' && (
                           <View style={styles.inputGroup}>
-                            <Text style={styles.inputLabel}>
-                              {t('auth.fullName', 'FULL NAME')}
-                            </Text>
+                            <View style={styles.labelRow}>
+                              <User size={13} color="#94A3B8" />
+                              <Text style={styles.inputLabel}>
+                                {t('auth.fullName', 'FULL NAME')}
+                              </Text>
+                            </View>
                             <TextInput
                               style={styles.textInput}
                               placeholder={t('auth.fullNamePlaceholder', 'e.g. Rahul Verma')}
@@ -371,9 +393,12 @@ export default function AuthModal({
                         )}
 
                         <View style={styles.inputGroup}>
-                          <Text style={styles.inputLabel}>
-                            {t('auth.email', 'EMAIL ADDRESS')}
-                          </Text>
+                          <View style={styles.labelRow}>
+                            <Mail size={13} color="#94A3B8" />
+                            <Text style={styles.inputLabel}>
+                              {t('auth.email', 'EMAIL ADDRESS')}
+                            </Text>
+                          </View>
                           <TextInput
                             style={styles.textInput}
                             placeholder={t('auth.emailPlaceholder', 'e.g. rahul@example.com')}
@@ -384,6 +409,25 @@ export default function AuthModal({
                             autoCapitalize="none"
                           />
                         </View>
+
+                        {/* Phone Number with Country Code for Sign Up */}
+                        {activeTab === 'signup' && (
+                          <View style={styles.inputGroup}>
+                            <View style={styles.labelRow}>
+                              <Phone size={13} color="#94A3B8" />
+                              <Text style={styles.inputLabel}>
+                                {isHindi ? 'मोबाइल नंबर (10 अंक)' : 'MOBILE NUMBER (10 DIGITS)'}
+                              </Text>
+                            </View>
+                            <PhoneInput
+                              countryCode={countryCode}
+                              onCountryCodeChange={setCountryCode}
+                              value={phone}
+                              onChangeText={setPhone}
+                              placeholder={isHindi ? '10 अंकों का मोबाइल नंबर' : '10-digit mobile number'}
+                            />
+                          </View>
+                        )}
 
                         {activeTab === 'signup' && (
                           <View style={styles.inputGroup}>
@@ -695,22 +739,27 @@ const styles = StyleSheet.create({
   inputGroup: {
     marginBottom: 14,
   },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
   inputLabel: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '800',
     color: COLORS.textSecondary,
     letterSpacing: 0.8,
-    marginBottom: 6,
   },
   textInput: {
-    height: 46,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    height: 44,
+    backgroundColor: '#111A2E',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: RADIUS.md,
     paddingHorizontal: 14,
     color: COLORS.textPrimary,
-    fontSize: 14,
+    fontSize: 13.5,
   },
   dobSelectorsRow: {
     flexDirection: 'row',
@@ -719,9 +768,9 @@ const styles = StyleSheet.create({
   dobSelectBox: {
     flex: 1,
     height: 44,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#111A2E',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: RADIUS.md,
     flexDirection: 'row',
     alignItems: 'center',
@@ -889,6 +938,12 @@ const styles = StyleSheet.create({
   userEmailText: {
     fontSize: 13,
     color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  userPhoneText: {
+    fontSize: 12.5,
+    color: '#38BDF8',
+    fontWeight: '700',
     marginTop: 2,
     marginBottom: 14,
   },

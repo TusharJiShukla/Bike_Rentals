@@ -27,6 +27,8 @@ import { BIKES_DATA } from '../data/bikes';
 import { COLORS, RADIUS, SHADOWS } from '../theme/colors';
 import { useLanguage } from '../i18n/LanguageContext';
 import CalendarPickerModal from './CalendarPickerModal';
+import PhoneInput from './PhoneInput';
+import { validatePhone } from '../utils/validation';
 
 function WhatsAppSvgIcon({ size = 20, color = '#FFFFFF' }) {
   return (
@@ -46,7 +48,9 @@ export default function EnquiryModal({
 
   const [bikeId, setBikeId] = useState(selectedBike?.id || BIKES_DATA[0].id);
   const [fullName, setFullName] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
   const [phone, setPhone] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [message, setMessage] = useState('');
@@ -65,6 +69,7 @@ export default function EnquiryModal({
     if (!visible) {
       setFullName('');
       setPhone('');
+      setPhoneError('');
       setStartDate('');
       setEndDate('');
       setMessage('');
@@ -76,11 +81,21 @@ export default function EnquiryModal({
   const currentBike = BIKES_DATA.find((b) => b.id === bikeId) || BIKES_DATA[0];
 
   const handleWhatsAppRedirect = () => {
+    // Validate phone number with Country Code and 10 digits
+    const phoneCheck = validatePhone(phone, countryCode);
+    if (!phoneCheck.isValid) {
+      setPhoneError(isHindi ? phoneCheck.errorHi : phoneCheck.error);
+      if (onShowToast) onShowToast(isHindi ? phoneCheck.errorHi : phoneCheck.error);
+      return;
+    }
+    setPhoneError('');
+
+    const formattedPhone = `${countryCode} ${phone}`;
     const text = encodeURIComponent(
       `Hello The Road Eagle! I would like to enquire about renting the ${currentBike.name} (${currentBike.model}).\n` +
       `Dates: ${startDate || 'Flexible'} to ${endDate || 'Flexible'}\n` +
       `My Name: ${fullName || 'Rider'}\n` +
-      `Phone: ${phone || 'Not provided'}\n` +
+      `Phone: ${formattedPhone}\n` +
       (message ? `Note: ${message}` : '')
     );
     Linking.openURL(`https://wa.me/919876543210?text=${text}`).catch(() => {});
@@ -89,6 +104,15 @@ export default function EnquiryModal({
   };
 
   const handleSubmit = () => {
+    // Validate phone number with Country Code and 10 digits
+    const phoneCheck = validatePhone(phone, countryCode);
+    if (!phoneCheck.isValid) {
+      setPhoneError(isHindi ? phoneCheck.errorHi : phoneCheck.error);
+      if (onShowToast) onShowToast(isHindi ? phoneCheck.errorHi : phoneCheck.error);
+      return;
+    }
+    setPhoneError('');
+
     setSubmitted(true);
     if (onShowToast) {
       onShowToast(
@@ -221,6 +245,7 @@ export default function EnquiryModal({
                       />
                     </View>
 
+                    {/* Unified PhoneInput with Country Code & 10-Digit Validation */}
                     <View style={styles.inputGroup}>
                       <View style={styles.labelRow}>
                         <Phone size={13} color="#94A3B8" />
@@ -228,14 +253,19 @@ export default function EnquiryModal({
                           {t('enquiry.phone', 'WHATSAPP PHONE NUMBER')}
                         </Text>
                       </View>
-                      <TextInput
-                        style={styles.input}
-                        placeholder={t('enquiry.phonePlaceholder', 'e.g. 9876543210')}
-                        placeholderTextColor="#475569"
-                        keyboardType="phone-pad"
+                      <PhoneInput
+                        countryCode={countryCode}
+                        onCountryCodeChange={(code) => {
+                          setCountryCode(code);
+                          setPhoneError('');
+                        }}
                         value={phone}
-                        onChangeText={setPhone}
-                        maxLength={15}
+                        onChangeText={(num) => {
+                          setPhone(num);
+                          if (phoneError) setPhoneError('');
+                        }}
+                        placeholder={t('enquiry.phonePlaceholder', '10-digit mobile number')}
+                        error={phoneError}
                       />
                     </View>
 

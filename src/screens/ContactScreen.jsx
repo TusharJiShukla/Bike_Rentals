@@ -16,24 +16,64 @@ import {
   Clock,
   Send,
   CheckCircle2,
+  User,
 } from 'lucide-react-native';
 import { BIKES_DATA } from '../data/bikes';
 import { COLORS, RADIUS, SHADOWS } from '../theme/colors';
+import { useLanguage } from '../i18n/LanguageContext';
+import PhoneInput from '../components/PhoneInput';
+import { validateEmail, validatePhone } from '../utils/validation';
 
 export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
+  const { isHindi } = useLanguage();
   const [fullName, setFullName] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
   const [phone, setPhone] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [nameError, setNameError] = useState('');
   const [selectedBikeId, setSelectedBikeId] = useState(BIKES_DATA[0].id);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = () => {
+    setNameError('');
+    setPhoneError('');
+    setEmailError('');
+
+    if (!fullName.trim()) {
+      const err = isHindi ? 'कृपया अपना पूरा नाम दर्ज करें।' : 'Please enter your full name.';
+      setNameError(err);
+      if (onShowToast) onShowToast(err);
+      return;
+    }
+
+    // Phone Validation with Country Code & exactly 10 digits
+    const phoneCheck = validatePhone(phone, countryCode);
+    if (!phoneCheck.isValid) {
+      const err = isHindi ? phoneCheck.errorHi : phoneCheck.error;
+      setPhoneError(err);
+      if (onShowToast) onShowToast(err);
+      return;
+    }
+
+    // Email Validation with @ and domain check
+    const emailCheck = validateEmail(email);
+    if (!emailCheck.isValid) {
+      const err = isHindi ? emailCheck.errorHi : emailCheck.error;
+      setEmailError(err);
+      if (onShowToast) onShowToast(err);
+      return;
+    }
+
     setSubmitted(true);
     if (onShowToast) {
-      onShowToast(`Thank you, ${fullName || 'Rider'}! Your enquiry has been received.`);
+      onShowToast(
+        isHindi
+          ? `धन्यवाद, ${fullName}! आपकी पूछताछ प्राप्त हो गई है।`
+          : `Thank you, ${fullName}! Your enquiry has been received.`
+      );
     }
     setTimeout(() => {
       setSubmitted(false);
@@ -45,7 +85,7 @@ export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
   };
 
   const handleOpenMaps = () => {
-    Linking.openURL('https://maps.google.com/?q=123+Rider+Avenue+Sector+5').catch(() => {});
+    Linking.openURL('https://maps.google.com/?q=Plot+42+Metro+Ring+Road+South+City+Bangalore').catch(() => {});
   };
 
   return (
@@ -57,10 +97,16 @@ export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
       <View style={styles.centerContainer}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.pretitle}>GET IN TOUCH</Text>
-          <Text style={styles.title}>Contact The Road Eagle</Text>
+          <Text style={styles.pretitle}>
+            {isHindi ? 'हमसे संपर्क करें' : 'GET IN TOUCH'}
+          </Text>
+          <Text style={styles.title}>
+            {isHindi ? 'The Road Eagle सहायता केंद्र' : 'Contact The Road Eagle'}
+          </Text>
           <Text style={styles.subtitle}>
-            Have questions about machines, security deposits, or outstation tours? Reach out via WhatsApp or visit our central pickup hub.
+            {isHindi
+              ? 'बाइक्स, सिक्योरिटी डिपॉजिट, या टूर पैकेज के बारे में कोई भी सवाल पूछें। हमारी टीम 24/7 तैयार है।'
+              : 'Have questions about machines, security deposits, or outstation tours? Reach out via WhatsApp or visit our central pickup hub.'}
           </Text>
         </View>
 
@@ -78,7 +124,9 @@ export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
                 <View style={[styles.actionIconCircle, { backgroundColor: 'rgba(2, 132, 199, 0.2)' }]}>
                   <Phone size={20} color="#38BDF8" />
                 </View>
-                <Text style={styles.actionCardTitle}>Instant Call</Text>
+                <Text style={styles.actionCardTitle}>
+                  {isHindi ? 'त्वरित कॉल' : 'Instant Call'}
+                </Text>
                 <Text style={styles.actionCardSub}>+91 98765 43210</Text>
               </TouchableOpacity>
 
@@ -90,113 +138,178 @@ export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
                 <View style={[styles.actionIconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.2)' }]}>
                   <MessageCircle size={20} color="#10B981" />
                 </View>
-                <Text style={styles.actionCardTitle}>WhatsApp Concierge</Text>
-                <Text style={styles.actionCardSub}>Live chat 24/7</Text>
+                <Text style={styles.actionCardTitle}>
+                  {isHindi ? 'व्हाट्सएप कंसीयर्ज' : 'WhatsApp Concierge'}
+                </Text>
+                <Text style={styles.actionCardSub}>
+                  {isHindi ? '24/7 लाइव सहायता' : 'Live chat 24/7'}
+                </Text>
               </TouchableOpacity>
             </View>
 
             {/* Hub Details Card */}
             <View style={styles.infoCard}>
               <View style={styles.infoRow}>
-                <View style={styles.infoIconCircle}>
+                <View style={styles.infoIconBox}>
                   <MapPin size={20} color={COLORS.accentCyan} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.infoTitle}>Main Garage & Hub</Text>
-                  <Text style={styles.infoText}>
-                    Plot 42, Speed Lane, Near Central Metro Station, Sector 18, Gurugram / Delhi NCR - 122001
+                <View style={styles.infoTextWrap}>
+                  <Text style={styles.infoTitle}>
+                    {isHindi ? 'सेंट्रल रेंटल हब' : 'Central Rental Hub'}
                   </Text>
-                  <TouchableOpacity onPress={handleOpenMaps} style={{ marginTop: 6 }}>
-                    <Text style={styles.mapLink}>Open in Google Maps →</Text>
+                  <Text style={styles.infoText}>
+                    {isHindi
+                      ? 'प्लॉट 42, मेट्रो रिंग रोड, साउथ सिटी, बैंगलोर, 560034'
+                      : 'Plot 42, Metro Ring Road, South City, Bangalore, 560034'}
+                  </Text>
+                  <TouchableOpacity onPress={handleOpenMaps} activeOpacity={0.8}>
+                    <Text style={styles.mapLink}>
+                      {isHindi ? 'गूगल मैप्स पर दिशा देखें →' : 'View on Google Maps →'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
 
-              <View style={styles.infoDivider} />
+              <View style={styles.divider} />
 
               <View style={styles.infoRow}>
-                <View style={styles.infoIconCircle}>
+                <View style={styles.infoIconBox}>
                   <Clock size={20} color={COLORS.accentCyan} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.infoTitle}>Operating Hours</Text>
-                  <Text style={styles.infoText}>Monday – Sunday: 08:00 AM – 09:30 PM</Text>
-                  <Text style={styles.infoSubtext}>Emergency roadside assistance operates 24/7</Text>
+                <View style={styles.infoTextWrap}>
+                  <Text style={styles.infoTitle}>
+                    {isHindi ? 'कार्य समय' : 'Operating Hours'}
+                  </Text>
+                  <Text style={styles.infoText}>
+                    {isHindi ? 'सोमवार - रविवार: सुबह 08:00 - रात 09:30' : 'Monday – Sunday: 08:00 AM – 09:30 PM'}
+                  </Text>
+                  <Text style={styles.infoSubText}>
+                    {isHindi ? 'पूर्व बुकिंग पर 24/7 पिकअप उपलब्ध' : '24/7 emergency roadside support active'}
+                  </Text>
                 </View>
               </View>
 
-              <View style={styles.infoDivider} />
+              <View style={styles.divider} />
 
               <View style={styles.infoRow}>
-                <View style={styles.infoIconCircle}>
+                <View style={styles.infoIconBox}>
                   <Mail size={20} color={COLORS.accentCyan} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.infoTitle}>Email Enquiries</Text>
-                  <Text style={styles.infoText}>support@theroadeagle.com</Text>
-                  <Text style={styles.infoSubtext}>Response within 2 hours</Text>
+                <View style={styles.infoTextWrap}>
+                  <Text style={styles.infoTitle}>
+                    {isHindi ? 'ईमेल पूछताछ' : 'Email Enquiries'}
+                  </Text>
+                  <Text style={styles.infoText}>rentals@theroadeagle.com</Text>
+                  <Text style={styles.infoSubText}>
+                    {isHindi ? 'प्रतिक्रिया समय: 2 घंटे के भीतर' : 'Response time: Within 2 business hours'}
+                  </Text>
                 </View>
               </View>
             </View>
           </View>
 
-          {/* Right Column: Enquiry Form */}
+          {/* Right Column: Contact & Callback Form */}
           <View style={styles.rightColumn}>
-            <View style={styles.formCard}>
-              <Text style={styles.formTitle}>Send an Instant Enquiry</Text>
+            <View style={[styles.formCard, SHADOWS.card]}>
+              <Text style={styles.formTitle}>
+                {isHindi ? 'संदेश या पूछताछ भेजें' : 'Send a Direct Message'}
+              </Text>
               <Text style={styles.formSubtitle}>
-                Leave your details below and our concierge team will reach out with availability & best tariff.
+                {isHindi
+                  ? 'नीचे अपना विवरण भरें। हमारे प्रतिनिधि आपको तुरंत कॉल या मैसेज करेंगे।'
+                  : 'Fill in your details below. Our reservation desk will connect with you via WhatsApp or phone.'}
               </Text>
 
               {submitted ? (
                 <View style={styles.successBox}>
                   <CheckCircle2 size={36} color={COLORS.statusAvailable} />
-                  <Text style={styles.successTitle}>Enquiry Submitted!</Text>
+                  <Text style={styles.successTitle}>
+                    {isHindi ? 'पूछताछ सफलतापूर्वक दर्ज!' : 'Enquiry Submitted!'}
+                  </Text>
                   <Text style={styles.successText}>
-                    Our team will call or WhatsApp you on {phone || 'your number'} shortly.
+                    {isHindi
+                      ? `हमारी टीम जल्द ही ${countryCode} ${phone} पर आपसे संपर्क करेगी।`
+                      : `Our team will call or WhatsApp you on ${countryCode} ${phone} shortly.`}
                   </Text>
                 </View>
               ) : (
                 <View style={styles.formFields}>
+                  {/* Full Name */}
                   <View style={styles.formGroup}>
-                    <Text style={styles.label}>FULL NAME</Text>
+                    <View style={styles.labelRow}>
+                      <User size={13} color="#94A3B8" />
+                      <Text style={styles.label}>
+                        {isHindi ? 'पूरा नाम' : 'FULL NAME'}
+                      </Text>
+                    </View>
                     <TextInput
-                      style={styles.input}
-                      placeholder="e.g. Rahul Verma"
+                      style={[styles.input, nameError && styles.inputError]}
+                      placeholder={isHindi ? 'उदा. राहुल वर्मा' : 'e.g. Rahul Verma'}
                       placeholderTextColor={COLORS.textMuted}
                       value={fullName}
-                      onChangeText={setFullName}
+                      onChangeText={(text) => {
+                        setFullName(text);
+                        if (nameError) setNameError('');
+                      }}
                     />
+                    {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
                   </View>
 
+                  {/* Phone Number & Email Row */}
                   <View style={styles.formRow}>
-                    <View style={[styles.formGroup, { flex: 1 }]}>
-                      <Text style={styles.label}>MOBILE NUMBER</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="10-digit number"
-                        placeholderTextColor={COLORS.textMuted}
-                        keyboardType="phone-pad"
+                    {/* Unified PhoneInput with Country Code + 10-Digit Validation */}
+                    <View style={[styles.formGroup, { flex: 1.1 }]}>
+                      <View style={styles.labelRow}>
+                        <Phone size={13} color="#94A3B8" />
+                        <Text style={styles.label}>
+                          {isHindi ? 'मोबाइल नंबर (10 अंक)' : 'MOBILE NUMBER (10 DIGITS)'}
+                        </Text>
+                      </View>
+                      <PhoneInput
+                        countryCode={countryCode}
+                        onCountryCodeChange={(code) => {
+                          setCountryCode(code);
+                          setPhoneError('');
+                        }}
                         value={phone}
-                        onChangeText={setPhone}
+                        onChangeText={(num) => {
+                          setPhone(num);
+                          if (phoneError) setPhoneError('');
+                        }}
+                        placeholder={isHindi ? '10 अंकों का नंबर' : '10-digit number'}
+                        error={phoneError}
                       />
                     </View>
 
-                    <View style={[styles.formGroup, { flex: 1 }]}>
-                      <Text style={styles.label}>EMAIL ADDRESS</Text>
+                    {/* Email Input with @ and .domain check */}
+                    <View style={[styles.formGroup, { flex: 1.2 }]}>
+                      <View style={styles.labelRow}>
+                        <Mail size={13} color="#94A3B8" />
+                        <Text style={styles.label}>
+                          {isHindi ? 'ईमेल पता' : 'EMAIL ADDRESS'}
+                        </Text>
+                      </View>
                       <TextInput
-                        style={styles.input}
-                        placeholder="rider@example.com"
+                        style={[styles.input, emailError && styles.inputError]}
+                        placeholder={isHindi ? 'name@example.com' : 'rider@example.com'}
                         placeholderTextColor={COLORS.textMuted}
                         keyboardType="email-address"
+                        autoCapitalize="none"
                         value={email}
-                        onChangeText={setEmail}
+                        onChangeText={(text) => {
+                          setEmail(text);
+                          if (emailError) setEmailError('');
+                        }}
                       />
+                      {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
                     </View>
                   </View>
 
+                  {/* Bike of Interest */}
                   <View style={styles.formGroup}>
-                    <Text style={styles.label}>SELECT MOTORBIKE OF INTEREST</Text>
+                    <Text style={styles.label}>
+                      {isHindi ? 'पसंदीदा मोटरसाइकिल चुनें' : 'SELECT MOTORBIKE OF INTEREST'}
+                    </Text>
                     <ScrollView
                       horizontal
                       showsHorizontalScrollIndicator={false}
@@ -220,11 +333,18 @@ export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
                     </ScrollView>
                   </View>
 
+                  {/* Message */}
                   <View style={styles.formGroup}>
-                    <Text style={styles.label}>SPECIAL REQUIREMENTS / TRIP DETAILS (OPTIONAL)</Text>
+                    <Text style={styles.label}>
+                      {isHindi ? 'विशेष आवश्यकताएं / यात्रा विवरण (वैकल्पिक)' : 'SPECIAL REQUIREMENTS / TRIP DETAILS (OPTIONAL)'}
+                    </Text>
                     <TextInput
                       style={[styles.input, styles.textArea]}
-                      placeholder="e.g. Need extra helmet, planning weekend trip to Rishikesh..."
+                      placeholder={
+                        isHindi
+                          ? 'उदा. अतिरिक्त हेलमेट चाहिए, ऋषिकेश यात्रा की योजना है...'
+                          : 'e.g. Need extra helmet, planning weekend trip to Rishikesh...'
+                      }
                       placeholderTextColor={COLORS.textMuted}
                       multiline
                       numberOfLines={3}
@@ -233,13 +353,16 @@ export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
                     />
                   </View>
 
+                  {/* Submit Button */}
                   <TouchableOpacity
                     style={styles.submitBtn}
                     onPress={handleSubmit}
                     activeOpacity={0.8}
                   >
                     <Send size={16} color="#FFFFFF" />
-                    <Text style={styles.submitBtnText}>Submit Rental Enquiry</Text>
+                    <Text style={styles.submitBtnText}>
+                      {isHindi ? 'पूछताछ सबमिट करें' : 'Submit Rental Enquiry'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -257,14 +380,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bgDark,
   },
   contentContainer: {
-    paddingBottom: 50,
+    paddingBottom: 60,
   },
   centerContainer: {
     width: '100%',
-    maxWidth: 1200,
+    maxWidth: 1240,
     alignSelf: 'center',
     paddingHorizontal: 24,
-    paddingTop: 32,
+    paddingTop: 28,
   },
   header: {
     marginBottom: 28,
@@ -275,19 +398,20 @@ const styles = StyleSheet.create({
     color: '#38BDF8',
     letterSpacing: 1.4,
     marginBottom: 6,
+    textTransform: 'uppercase',
   },
   title: {
     fontSize: 32,
     fontWeight: '900',
     color: COLORS.textPrimary,
-    marginBottom: 10,
+    marginBottom: 8,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    lineHeight: 22,
-    maxWidth: 700,
+    maxWidth: 680,
+    lineHeight: 21,
   },
   mainLayout: {
     flexDirection: 'row',
@@ -297,11 +421,11 @@ const styles = StyleSheet.create({
   leftColumn: {
     flex: 1,
     minWidth: 320,
-    gap: 20,
+    gap: 16,
   },
   rightColumn: {
-    flex: 1.2,
-    minWidth: 320,
+    flex: 1.3,
+    minWidth: 340,
   },
   actionCardsRow: {
     flexDirection: 'row',
@@ -315,52 +439,55 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg,
     padding: 18,
     alignItems: 'center',
-    justifyContent: 'center',
+    textAlign: 'center',
   },
   actionIconCircle: {
     width: 44,
     height: 44,
-    borderRadius: RADIUS.full,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
   },
   actionCardTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '800',
     color: COLORS.textPrimary,
-    marginBottom: 3,
+    marginBottom: 2,
   },
   actionCardSub: {
     fontSize: 12,
-    color: '#38BDF8',
-    fontWeight: '600',
+    color: COLORS.textMuted,
   },
   infoCard: {
     backgroundColor: COLORS.bgCard,
     borderWidth: 1,
     borderColor: COLORS.borderCard,
     borderRadius: RADIUS.lg,
-    padding: 24,
+    padding: 22,
     gap: 16,
   },
   infoRow: {
     flexDirection: 'row',
     gap: 14,
-    alignItems: 'flex-start',
   },
-  infoIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: RADIUS.full,
-    backgroundColor: 'rgba(2, 132, 199, 0.2)',
+  infoIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: RADIUS.md,
+    backgroundColor: 'rgba(2, 132, 199, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
+    marginTop: 2,
+  },
+  infoTextWrap: {
+    flex: 1,
   },
   infoTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '800',
     color: COLORS.textPrimary,
     marginBottom: 4,
   },
@@ -369,17 +496,18 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     lineHeight: 19,
   },
-  infoSubtext: {
+  infoSubText: {
     fontSize: 11.5,
     color: COLORS.textMuted,
     marginTop: 3,
   },
   mapLink: {
-    fontSize: 12.5,
-    color: '#38BDF8',
+    fontSize: 12,
     fontWeight: '700',
+    color: '#38BDF8',
+    marginTop: 6,
   },
-  infoDivider: {
+  divider: {
     height: 1,
     backgroundColor: COLORS.borderLight,
   },
@@ -388,13 +516,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.borderCard,
     borderRadius: RADIUS.lg,
-    padding: 26,
+    padding: 24,
   },
   formTitle: {
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: '900',
     color: COLORS.textPrimary,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   formSubtitle: {
     fontSize: 13,
@@ -412,40 +540,55 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   label: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '800',
-    color: COLORS.textSecondary,
+    color: '#94A3B8',
     letterSpacing: 0.8,
   },
   input: {
-    backgroundColor: COLORS.bgCardAlt,
+    backgroundColor: '#111A2E',
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: RADIUS.md,
     paddingHorizontal: 14,
-    paddingVertical: 11,
+    height: 44,
     color: COLORS.textPrimary,
-    fontSize: 13.5,
+    fontSize: 13,
+  },
+  inputError: {
+    borderColor: 'rgba(225, 29, 72, 0.6)',
+    backgroundColor: 'rgba(225, 29, 72, 0.05)',
+  },
+  errorText: {
+    color: '#FDA4AF',
+    fontSize: 11,
+    marginTop: 2,
   },
   textArea: {
-    height: 80,
+    height: 76,
     textAlignVertical: 'top',
+    paddingTop: 10,
   },
   bikePillsRow: {
     gap: 8,
     paddingVertical: 2,
   },
   bikePill: {
-    backgroundColor: COLORS.bgCardAlt,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    borderRadius: RADIUS.full,
-    paddingHorizontal: 14,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 12,
     paddingVertical: 7,
+    borderRadius: RADIUS.md,
   },
   bikePillActive: {
-    backgroundColor: '#0284C7',
+    backgroundColor: 'rgba(2, 132, 199, 0.25)',
     borderColor: '#38BDF8',
   },
   bikePillText: {
@@ -459,39 +602,40 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     backgroundColor: '#0284C7',
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.4)',
-    borderRadius: RADIUS.full,
-    paddingVertical: 13,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginTop: 8,
+    borderRadius: RADIUS.full,
+    paddingVertical: 13,
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.4)',
     shadowColor: '#0284C7',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.35,
-    shadowRadius: 10,
+    shadowRadius: 8,
     elevation: 4,
   },
   submitBtnText: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 13.5,
+    fontWeight: '800',
   },
   successBox: {
     alignItems: 'center',
     paddingVertical: 36,
-    gap: 10,
+    gap: 12,
   },
   successTitle: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: '900',
     color: COLORS.textPrimary,
   },
   successText: {
     fontSize: 13,
     color: COLORS.textSecondary,
     textAlign: 'center',
+    lineHeight: 19,
   },
 });
