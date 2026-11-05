@@ -9,12 +9,14 @@ import {
 import { Star, Zap, Fuel, Cog, ArrowRight } from 'lucide-react-native';
 import { COLORS, RADIUS, SHADOWS } from '../theme/colors';
 import { useLanguage } from '../i18n/LanguageContext';
+import WhatsAppIcon from './WhatsAppIcon';
 
 export default function BikeCard({
   bike,
   onSelectBike,
   onOpenBookModal,
   onStartBooking,
+  onOpenWhatsApp,
   style,
   compact = false,
 }) {
@@ -26,7 +28,7 @@ export default function BikeCard({
       {/* Top Image Container */}
       <TouchableOpacity
         activeOpacity={0.9}
-        onPress={() => onSelectBike(bike)}
+        onPress={() => onSelectBike && onSelectBike(bike)}
         style={[styles.imageContainer, compact && styles.imageContainerCompact]}
       >
         <Image
@@ -126,7 +128,7 @@ export default function BikeCard({
           ) : null}
         </View>
 
-        {/* Pricing & Booking CTA Footer */}
+        {/* Pricing & Booking CTA Footer with WhatsApp button */}
         <View style={[styles.footerRow, compact && styles.footerRowCompact]}>
           <View style={[styles.priceBlock, compact && styles.priceBlockCompact]}>
             <View style={styles.priceRow}>
@@ -145,22 +147,35 @@ export default function BikeCard({
             </Text>
           </View>
 
-          <TouchableOpacity
-            style={[styles.bookBtn, compact && styles.bookBtnCompact]}
-            onPress={() => {
-              if (onStartBooking) {
-                onStartBooking(bike);
-              } else if (onSelectBike) {
-                onSelectBike(bike);
-              }
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.bookBtnText, compact && styles.bookBtnTextCompact]}>
-              {t('fleet.bookBtn', 'Book')}
-            </Text>
-            <ArrowRight size={compact ? 12 : 14} color="#FFFFFF" strokeWidth={2.2} />
-          </TouchableOpacity>
+          <View style={styles.actionButtonsRow}>
+            {/* Quick WhatsApp Action Button */}
+            <TouchableOpacity
+              style={styles.cardWhatsAppBtn}
+              onPress={() => onOpenWhatsApp && onOpenWhatsApp(bike)}
+              activeOpacity={0.8}
+              accessibilityLabel="Enquire on WhatsApp"
+            >
+              <WhatsAppIcon size={14} color="#FFFFFF" withCircle circleSize={28} />
+            </TouchableOpacity>
+
+            {/* Book Now Button */}
+            <TouchableOpacity
+              style={[styles.bookBtn, compact && styles.bookBtnCompact]}
+              onPress={() => {
+                if (onStartBooking) {
+                  onStartBooking(bike);
+                } else if (onSelectBike) {
+                  onSelectBike(bike);
+                }
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.bookBtnText, compact && styles.bookBtnTextCompact]}>
+                {t('fleet.bookBtn', 'Book')}
+              </Text>
+              <ArrowRight size={compact ? 12 : 13} color="#FFFFFF" strokeWidth={2.2} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </View>
@@ -174,7 +189,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: COLORS.borderCard,
-    width: 290,
+    width: '100%',
   },
   cardCompact: {
     width: '100%',
@@ -204,60 +219,61 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    zIndex: 2,
   },
   primaryBadge: {
-    backgroundColor: 'rgba(2, 132, 199, 0.9)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: RADIUS.sm,
+    backgroundColor: 'rgba(11, 20, 38, 0.88)',
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.4)',
-  },
-  primaryBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 9.5,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  statusBadge: {
+    borderColor: COLORS.accentCyan,
+    borderRadius: RADIUS.full,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: RADIUS.sm,
-  },
-  statusBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 9.5,
-    fontWeight: '800',
-    letterSpacing: 0.5,
   },
   badgeCompact: {
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
+  primaryBadgeText: {
+    color: COLORS.accentCyan,
+    fontSize: 9.5,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
   badgeTextCompact: {
     fontSize: 8.5,
   },
+  statusBadge: {
+    borderRadius: RADIUS.full,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  statusBadgeText: {
+    color: '#050B14',
+    fontSize: 9.5,
+    fontWeight: '800',
+  },
   content: {
-    padding: 16,
+    padding: 14,
   },
   contentCompact: {
-    padding: 12,
+    padding: 10,
   },
   titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 2,
   },
   bikeName: {
     fontSize: 16,
     fontWeight: '800',
     color: COLORS.textPrimary,
-    letterSpacing: -0.2,
+    flex: 1,
   },
   bikeNameCompact: {
-    fontSize: 14.5,
+    fontSize: 14,
   },
   bikeModel: {
-    fontSize: 12,
+    fontSize: 12.5,
     color: COLORS.textSecondary,
     marginBottom: 8,
   },
@@ -268,24 +284,24 @@ const styles = StyleSheet.create({
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    gap: 4,
+    marginBottom: 10,
   },
   ratingRowCompact: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   stars: {
     flexDirection: 'row',
     gap: 2,
-    marginRight: 6,
   },
   ratingText: {
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    marginRight: 4,
+    marginLeft: 2,
   },
   ratingTextCompact: {
-    fontSize: 11,
+    fontSize: 10.5,
   },
   reviewCount: {
     fontSize: 11,
@@ -298,25 +314,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   specsRowCompact: {
+    marginBottom: 8,
     gap: 4,
-    marginBottom: 10,
   },
   specPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3.5,
     backgroundColor: COLORS.bgCardAlt,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: RADIUS.sm,
     borderWidth: 1,
     borderColor: COLORS.borderLight,
-  },
-  specPillCompact: {
-    paddingHorizontal: 6,
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: 7,
     paddingVertical: 3,
   },
   specText: {
@@ -331,9 +343,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 12,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: COLORS.borderCard,
+    gap: 8,
   },
   footerRowCompact: {
     paddingTop: 8,
@@ -355,7 +368,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   priceValue: {
-    fontSize: 17,
+    fontSize: 16.5,
     fontWeight: '900',
     color: '#38BDF8',
   },
@@ -378,13 +391,22 @@ const styles = StyleSheet.create({
   inrSubtextCompact: {
     fontSize: 9,
   },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  cardWhatsAppBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   bookBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
     backgroundColor: '#0284C7',
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingHorizontal: 13,
+    paddingVertical: 6.5,
     borderRadius: RADIUS.full,
     borderWidth: 1,
     borderColor: 'rgba(56, 189, 248, 0.4)',
@@ -395,15 +417,15 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   bookBtnCompact: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5.5,
   },
   bookBtnText: {
     color: '#FFFFFF',
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '700',
   },
   bookBtnTextCompact: {
-    fontSize: 11.5,
+    fontSize: 11,
   },
 });

@@ -96,6 +96,7 @@ function BottomTabNavigator({
             onSelectBike={onSelectBike}
             onStartBooking={onStartBooking}
             onOpenBookModal={onOpenBookModal}
+            onOpenWhatsApp={onOpenWhatsApp}
           />
         )}
       </Tab.Screen>

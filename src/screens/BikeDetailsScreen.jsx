@@ -52,7 +52,7 @@ export default function BikeDetailsScreen({
             <Image
               source={gallery[activeImageIndex] || bike.imageSource}
               style={styles.mainImage}
-              resizeMode="cover"
+              resizeMode="contain"
             />
 
             {/* Badges on image */}

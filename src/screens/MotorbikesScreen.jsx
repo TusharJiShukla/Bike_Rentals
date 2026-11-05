@@ -20,6 +20,7 @@ export default function MotorbikesScreen({
   onSelectBike,
   onStartBooking,
   onOpenBookModal,
+  onOpenWhatsApp,
 }) {
   const { t, isHindi } = useLanguage();
   const initialCategory = route?.params?.initialCategory || 'all';
@@ -167,10 +168,19 @@ export default function MotorbikesScreen({
           </Text>
         </View>
 
-        {/* Responsive FlexWrap Grid */}
+        {/* Responsive FlexWrap Grid (Centered) */}
         <View style={styles.gridContainer}>
           {filteredBikes.map((bike) => (
-            <View key={bike.id} style={{ width: cardWidth }}>
+            <View
+              key={bike.id}
+              style={{
+                width: cardWidth,
+                minWidth: 280,
+                maxWidth: 360,
+                flexGrow: 0,
+                flexShrink: 0,
+              }}
+            >
               <BikeCard
                 bike={bike}
                 compact={isCompact}
@@ -180,6 +190,7 @@ export default function MotorbikesScreen({
                 }}
                 onStartBooking={onStartBooking}
                 onOpenBookModal={onOpenBookModal}
+                onOpenWhatsApp={onOpenWhatsApp}
               />
             </View>
           ))}
@@ -328,7 +339,9 @@ const styles = StyleSheet.create({
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: 20,
+    alignItems: 'stretch',
   },
   emptyContainer: {
     width: '100%',

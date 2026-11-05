@@ -7,10 +7,10 @@ import {
   TextInput,
   TouchableOpacity,
   Linking,
+  useWindowDimensions,
 } from 'react-native';
 import {
   Phone,
-  MessageCircle,
   Mail,
   MapPin,
   Clock,
@@ -22,10 +22,14 @@ import { BIKES_DATA } from '../data/bikes';
 import { COLORS, RADIUS, SHADOWS } from '../theme/colors';
 import { useLanguage } from '../i18n/LanguageContext';
 import PhoneInput from '../components/PhoneInput';
+import WhatsAppIcon from '../components/WhatsAppIcon';
 import { validateEmail, validatePhone } from '../utils/validation';
 
 export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
   const { isHindi } = useLanguage();
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
+
   const [fullName, setFullName] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
   const [phone, setPhone] = useState('');
@@ -135,8 +139,8 @@ export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
                 onPress={onOpenWhatsApp}
                 activeOpacity={0.8}
               >
-                <View style={[styles.actionIconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.2)' }]}>
-                  <MessageCircle size={20} color="#10B981" />
+                <View style={[styles.actionIconCircle, { backgroundColor: 'rgba(37, 211, 102, 0.15)' }]}>
+                  <WhatsAppIcon size={20} color="#FFFFFF" withCircle circleSize={34} />
                 </View>
                 <Text style={styles.actionCardTitle}>
                   {isHindi ? 'व्हाट्सएप कंसीयर्ज' : 'WhatsApp Concierge'}
@@ -148,7 +152,7 @@ export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
             </View>
 
             {/* Hub Details Card */}
-            <View style={styles.infoCard}>
+            <View style={[styles.infoCard, SHADOWS.card]}>
               <View style={styles.infoRow}>
                 <View style={styles.infoIconBox}>
                   <MapPin size={20} color={COLORS.accentCyan} />
@@ -158,13 +162,11 @@ export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
                     {isHindi ? 'सेंट्रल रेंटल हब' : 'Central Rental Hub'}
                   </Text>
                   <Text style={styles.infoText}>
-                    {isHindi
-                      ? 'प्लॉट 42, मेट्रो रिंग रोड, साउथ सिटी, बैंगलोर, 560034'
-                      : 'Plot 42, Metro Ring Road, South City, Bangalore, 560034'}
+                    Plot 42, Metro Ring Road, South City, Bangalore, 560034
                   </Text>
-                  <TouchableOpacity onPress={handleOpenMaps} activeOpacity={0.8}>
+                  <TouchableOpacity onPress={handleOpenMaps} activeOpacity={0.7}>
                     <Text style={styles.mapLink}>
-                      {isHindi ? 'गूगल मैप्स पर दिशा देखें →' : 'View on Google Maps →'}
+                      {isHindi ? 'गूगल मैप्स पर देखें →' : 'View on Google Maps →'}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -210,7 +212,7 @@ export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
 
           {/* Right Column: Contact & Callback Form */}
           <View style={styles.rightColumn}>
-            <View style={[styles.formCard, SHADOWS.card]}>
+            <View style={[styles.formCard, isMobile && styles.formCardMobile, SHADOWS.card]}>
               <Text style={styles.formTitle}>
                 {isHindi ? 'संदेश या पूछताछ भेजें' : 'Send a Direct Message'}
               </Text>
@@ -255,10 +257,10 @@ export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
                     {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
                   </View>
 
-                  {/* Phone Number & Email Row */}
-                  <View style={styles.formRow}>
+                  {/* Phone Number & Email - 100% full width stacked on mobile */}
+                  <View style={[styles.formRow, isMobile && styles.formRowMobile]}>
                     {/* Unified PhoneInput with Country Code + 10-Digit Validation */}
-                    <View style={[styles.formGroup, { flex: 1.1 }]}>
+                    <View style={[styles.formGroup, isMobile ? styles.formGroupFull : { flex: 1.1 }]}>
                       <View style={styles.labelRow}>
                         <Phone size={13} color="#94A3B8" />
                         <Text style={styles.label}>
@@ -282,7 +284,7 @@ export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
                     </View>
 
                     {/* Email Input with @ and .domain check */}
-                    <View style={[styles.formGroup, { flex: 1.2 }]}>
+                    <View style={[styles.formGroup, isMobile ? styles.formGroupFull : { flex: 1.2 }]}>
                       <View style={styles.labelRow}>
                         <Mail size={13} color="#94A3B8" />
                         <Text style={styles.label}>
@@ -305,16 +307,12 @@ export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
                     </View>
                   </View>
 
-                  {/* Bike of Interest */}
+                  {/* Bike of Interest - FlexWrap cleanly without spilling or cutting off */}
                   <View style={styles.formGroup}>
                     <Text style={styles.label}>
                       {isHindi ? 'पसंदीदा मोटरसाइकिल चुनें' : 'SELECT MOTORBIKE OF INTEREST'}
                     </Text>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.bikePillsRow}
-                    >
+                    <View style={styles.bikePillsWrap}>
                       {BIKES_DATA.map((b) => {
                         const isSelected = selectedBikeId === b.id;
                         return (
@@ -330,7 +328,7 @@ export default function ContactScreen({ onShowToast, onOpenWhatsApp }) {
                           </TouchableOpacity>
                         );
                       })}
-                    </ScrollView>
+                    </View>
                   </View>
 
                   {/* Message */}
@@ -386,11 +384,11 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 1240,
     alignSelf: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 28,
+    paddingHorizontal: 16,
+    paddingTop: 24,
   },
   header: {
-    marginBottom: 28,
+    marginBottom: 24,
   },
   pretitle: {
     fontSize: 11,
@@ -401,14 +399,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   title: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: '900',
     color: COLORS.textPrimary,
     marginBottom: 8,
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13.5,
     color: COLORS.textSecondary,
     maxWidth: 680,
     lineHeight: 21,
@@ -416,20 +414,20 @@ const styles = StyleSheet.create({
   mainLayout: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 24,
+    gap: 20,
   },
   leftColumn: {
     flex: 1,
-    minWidth: 320,
+    minWidth: 300,
     gap: 16,
   },
   rightColumn: {
-    flex: 1.3,
-    minWidth: 340,
+    flex: 1.25,
+    minWidth: 300,
   },
   actionCardsRow: {
     flexDirection: 'row',
-    gap: 14,
+    gap: 12,
   },
   quickActionCard: {
     flex: 1,
@@ -437,9 +435,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.borderCard,
     borderRadius: RADIUS.lg,
-    padding: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 12,
     alignItems: 'center',
-    textAlign: 'center',
+    justifyContent: 'center',
   },
   actionIconCircle: {
     width: 44,
@@ -450,26 +449,28 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   actionCardTitle: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '800',
     color: COLORS.textPrimary,
-    marginBottom: 2,
+    marginBottom: 3,
+    textAlign: 'center',
   },
   actionCardSub: {
     fontSize: 12,
     color: COLORS.textMuted,
+    textAlign: 'center',
   },
   infoCard: {
     backgroundColor: COLORS.bgCard,
     borderWidth: 1,
     borderColor: COLORS.borderCard,
     borderRadius: RADIUS.lg,
-    padding: 22,
+    padding: 20,
     gap: 16,
   },
   infoRow: {
     flexDirection: 'row',
-    gap: 14,
+    gap: 12,
   },
   infoIconBox: {
     width: 36,
@@ -486,15 +487,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   infoTitle: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '800',
     color: COLORS.textPrimary,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   infoText: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: COLORS.textSecondary,
-    lineHeight: 19,
+    lineHeight: 18,
   },
   infoSubText: {
     fontSize: 11.5,
@@ -516,19 +517,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.borderCard,
     borderRadius: RADIUS.lg,
-    padding: 24,
+    padding: 22,
+  },
+  formCardMobile: {
+    padding: 16,
   },
   formTitle: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: '900',
     color: COLORS.textPrimary,
     marginBottom: 4,
   },
   formSubtitle: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: COLORS.textSecondary,
-    lineHeight: 19,
-    marginBottom: 20,
+    lineHeight: 18,
+    marginBottom: 18,
   },
   formFields: {
     gap: 14,
@@ -536,9 +540,16 @@ const styles = StyleSheet.create({
   formGroup: {
     gap: 6,
   },
+  formGroupFull: {
+    width: '100%',
+  },
   formRow: {
     flexDirection: 'row',
     gap: 12,
+  },
+  formRowMobile: {
+    flexDirection: 'column',
+    gap: 14,
   },
   labelRow: {
     flexDirection: 'row',
@@ -575,7 +586,9 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     paddingTop: 10,
   },
-  bikePillsRow: {
+  bikePillsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
     paddingVertical: 2,
   },
