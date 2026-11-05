@@ -8,10 +8,11 @@ import {
   TouchableOpacity,
   useWindowDimensions,
 } from 'react-native';
-import { Search, ArrowUpDown } from 'lucide-react-native';
+import { Search } from 'lucide-react-native';
 import { BIKES_DATA } from '../data/bikes';
 import { COLORS, RADIUS } from '../theme/colors';
 import BikeCard from '../components/BikeCard';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function MotorbikesScreen({
   navigation,
@@ -20,6 +21,7 @@ export default function MotorbikesScreen({
   onStartBooking,
   onOpenBookModal,
 }) {
+  const { t, isHindi } = useLanguage();
   const initialCategory = route?.params?.initialCategory || 'all';
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,18 +46,18 @@ export default function MotorbikesScreen({
   const isCompact = cardWidth < 250;
 
   const categories = [
-    { id: 'all', label: 'All Fleet' },
-    { id: 'scooter', label: 'Scooters' },
-    { id: 'commuter', label: 'Commuters' },
-    { id: 'cruiser', label: 'Cruisers' },
-    { id: 'superbike', label: 'Superbikes' },
+    { id: 'all', label: t('fleet.allBikes', 'All Fleet') },
+    { id: 'scooters', label: t('fleet.scooters', 'Scooters') },
+    { id: 'commuter', label: t('fleet.commuters', 'Commuters') },
+    { id: 'cruiser', label: t('fleet.cruisers', 'Cruisers') },
+    { id: 'premium', label: t('fleet.premium', 'Premium') },
   ];
 
   const sortOptions = [
-    { id: 'newest', label: 'Featured' },
-    { id: 'price-asc', label: 'Price: Low to High' },
-    { id: 'price-desc', label: 'Price: High to Low' },
-    { id: 'rating', label: 'Top Rated' },
+    { id: 'newest', label: t('fleet.featured', 'Featured') },
+    { id: 'price-asc', label: t('fleet.priceLow', 'Price: Low to High') },
+    { id: 'price-desc', label: t('fleet.priceHigh', 'Price: High to Low') },
+    { id: 'rating', label: isHindi ? 'शीर्ष रेटेड' : 'Top Rated' },
   ];
 
   const filteredBikes = useMemo(() => {
@@ -88,10 +90,10 @@ export default function MotorbikesScreen({
       <View style={styles.centerContainer}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.pretitle}>EXPLORE FLEET</Text>
-          <Text style={styles.title}>All Motorbikes & Scooters</Text>
+          <Text style={styles.pretitle}>{t('fleet.pretitle', 'EXPLORE FLEET')}</Text>
+          <Text style={styles.title}>{t('fleet.title', 'All Motorbikes & Scooters')}</Text>
           <Text style={styles.subtitle}>
-            Filter by riding style, engine capacity, or budget. 100% verified fleet with instant booking.
+            {t('fleet.subtitle', 'Filter by riding style, engine capacity, or budget. 100% verified fleet with instant booking.')}
           </Text>
         </View>
 
@@ -101,7 +103,7 @@ export default function MotorbikesScreen({
             <Search size={18} color={COLORS.textMuted} style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search by name, model (e.g. Meteor, Ninja, Splendor)..."
+              placeholder={t('fleet.searchPlaceholder', 'Search by model, brand, or cc...')}
               placeholderTextColor={COLORS.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -156,18 +158,19 @@ export default function MotorbikesScreen({
           </ScrollView>
         </View>
 
-        {/* Results Count */}
+        {/* Count Bar */}
         <View style={styles.countRow}>
           <Text style={styles.countText}>
-            Showing <Text style={styles.countHighlight}>{filteredBikes.length}</Text> available machine
-            {filteredBikes.length === 1 ? '' : 's'}
+            {t('fleet.showing', 'Showing')}{' '}
+            <Text style={styles.countHighlight}>{filteredBikes.length}</Text>{' '}
+            {t('fleet.motorcycles', 'motorcycles')}
           </Text>
         </View>
 
-        {/* Grid Container */}
+        {/* Responsive FlexWrap Grid */}
         <View style={styles.gridContainer}>
           {filteredBikes.map((bike) => (
-            <View key={bike.id} style={{ width: cardWidth, marginBottom: gap }}>
+            <View key={bike.id} style={{ width: cardWidth }}>
               <BikeCard
                 bike={bike}
                 compact={isCompact}
@@ -177,16 +180,19 @@ export default function MotorbikesScreen({
                 }}
                 onStartBooking={onStartBooking}
                 onOpenBookModal={onOpenBookModal}
-                style={{ width: '100%', marginBottom: 0 }}
               />
             </View>
           ))}
 
           {filteredBikes.length === 0 && (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyTitle}>No matching machines found</Text>
+              <Text style={styles.emptyTitle}>
+                {isHindi ? 'कोई मोटरसाइकिल नहीं मिली' : 'No Motorbikes Found'}
+              </Text>
               <Text style={styles.emptySubtitle}>
-                Try adjusting your search terms or selecting "All Fleet" category.
+                {isHindi
+                  ? 'अपनी खोज या फ़िल्टर बदलकर दोबारा प्रयास करें।'
+                  : 'Try adjusting your search criteria or resetting the category filter.'}
               </Text>
             </View>
           )}
@@ -220,6 +226,7 @@ const styles = StyleSheet.create({
     color: '#38BDF8',
     letterSpacing: 1.4,
     marginBottom: 6,
+    textTransform: 'uppercase',
   },
   title: {
     fontSize: 32,

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -24,12 +24,16 @@ import {
   Check,
   X,
   FileText,
-  AlertTriangle,
+  CalendarDays,
+  User,
+  Phone,
+  Mail,
 } from 'lucide-react-native';
 import { BIKES_DATA } from '../data/bikes';
 import { COUNTRY_CODES } from '../data/countries';
-import { useEffect } from 'react';
 import { COLORS, RADIUS, SHADOWS } from '../theme/colors';
+import { useLanguage } from '../i18n/LanguageContext';
+import CalendarPickerModal from '../components/CalendarPickerModal';
 
 const PICKUP_TIMES = [
   '09:00 AM (Hub Opens)',
@@ -57,17 +61,21 @@ export default function BookingScreen({
   user,
   onOpenAuth,
 }) {
+  const { t, isHindi } = useLanguage();
   const selectedBike = route?.params?.bike || BIKES_DATA[0];
   const [step, setStep] = useState(1);
 
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
 
-  // Form input dates initialized EMPTY - user must pick or enter, or placeholders are visible
+  // Form input dates initialized EMPTY - user picks from calendar or types
   const [pickupDate, setPickupDate] = useState('');
   const [pickupTime, setPickupTime] = useState('');
   const [returnDate, setReturnDate] = useState('');
   const [returnTime, setReturnTime] = useState('');
+
+  // Calendar Picker Modal Target: 'pickup' | 'return' | 'dob' | null
+  const [calendarTarget, setCalendarTarget] = useState(null);
 
   // Dropdown modal state for times
   const [activePicker, setActivePicker] = useState(null); // 'pickup' | 'return' | null
@@ -77,6 +85,7 @@ export default function BookingScreen({
   const [countryCode, setCountryCode] = useState('+91');
   const [riderPhone, setRiderPhone] = useState('');
   const [riderEmail, setRiderEmail] = useState('');
+  const [riderDob, setRiderDob] = useState('');
   const [isCountryModalOpen, setIsCountryModalOpen] = useState(false);
 
   useEffect(() => {
@@ -84,10 +93,14 @@ export default function BookingScreen({
       setRiderName('');
       setRiderPhone('');
       setRiderEmail('');
+      setRiderDob('');
       setPickupDate('');
       setPickupTime('');
       setReturnDate('');
       setReturnTime('');
+    } else {
+      if (user.name) setRiderName(user.name);
+      if (user.email) setRiderEmail(user.email);
     }
   }, [user]);
 
@@ -97,9 +110,13 @@ export default function BookingScreen({
   // Calculate rental duration in days
   const rentalDays = useMemo(() => {
     try {
-      if (!pickupDate || !returnDate) return 3; // default estimate
+      if (!pickupDate || !returnDate) return 1;
       const parse = (str) => {
         if (!str) return null;
+        if (str.includes('-')) {
+          const parts = str.split('-');
+          return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        }
         if (str.includes('/')) {
           const parts = str.split('/');
           if (parts.length === 3) {
@@ -110,12 +127,12 @@ export default function BookingScreen({
       };
       const d1 = parse(pickupDate);
       const d2 = parse(returnDate);
-      if (!d1 || !d2 || isNaN(d1.getTime()) || isNaN(d2.getTime())) return 3;
+      if (!d1 || !d2 || isNaN(d1.getTime()) || isNaN(d2.getTime())) return 1;
       const diffMs = Math.abs(d2.getTime() - d1.getTime());
       const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-      return days > 0 ? days + 1 : 3;
+      return days > 0 ? days + 1 : 1;
     } catch {
-      return 3;
+      return 1;
     }
   }, [pickupDate, returnDate]);
 
@@ -127,11 +144,15 @@ export default function BookingScreen({
   const handleContinueToSummary = () => {
     if (!user) {
       if (onOpenAuth) onOpenAuth();
-      if (onShowToast) onShowToast('Please log in or sign up first to proceed with booking.');
+      if (onShowToast) onShowToast(isHindi ? 'कृपया बुकिंग जारी रखने के लिए पहले लॉग इन करें।' : 'Please log in or sign up first to proceed with booking.');
       return;
     }
-    if (!pickupDate || !returnDate) {
-      if (onShowToast) onShowToast('Please enter both pickup and return dates.');
+    if (!pickupDate) {
+      if (onShowToast) onShowToast(isHindi ? 'कृपया पिकअप की तारीख चुनें।' : 'Please select a pickup date from the calendar.');
+      return;
+    }
+    if (!returnDate) {
+      if (onShowToast) onShowToast(isHindi ? 'कृपया वापसी की तारीख चुनें।' : 'Please select a return date from the calendar.');
       return;
     }
     setStep(2);
@@ -140,27 +161,27 @@ export default function BookingScreen({
   const handleProceedPayment = () => {
     if (!user) {
       if (onOpenAuth) onOpenAuth();
-      if (onShowToast) onShowToast('Please log in or sign up first to proceed with booking.');
+      if (onShowToast) onShowToast(isHindi ? 'कृपया बुकिंग के लिए लॉग इन करें।' : 'Please log in or sign up first to proceed with booking.');
       return;
     }
 
     if (!riderName.trim()) {
-      if (onShowToast) onShowToast('Please enter rider full name.');
+      if (onShowToast) onShowToast(isHindi ? 'कृपया राइडर का पूरा नाम दर्ज करें।' : 'Please enter rider full name.');
       return;
     }
 
     const cleanPhone = riderPhone.replace(/\D/g, '');
     if (countryCode === '+91' && cleanPhone.length !== 10) {
-      if (onShowToast) onShowToast('Please enter a valid 10-digit mobile number.');
+      if (onShowToast) onShowToast(isHindi ? 'कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें।' : 'Please enter a valid 10-digit mobile number.');
       return;
     } else if (cleanPhone.length < 7) {
-      if (onShowToast) onShowToast('Please enter a valid mobile number.');
+      if (onShowToast) onShowToast(isHindi ? 'कृपया वैध मोबाइल नंबर दर्ज करें।' : 'Please enter a valid mobile number.');
       return;
     }
 
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!riderEmail.trim() || !emailRegex.test(riderEmail.trim())) {
-      if (onShowToast) onShowToast('Please enter a valid email address.');
+      if (onShowToast) onShowToast(isHindi ? 'कृपया वैध ईमेल दर्ज करें।' : 'Please enter a valid email address.');
       return;
     }
 
@@ -169,7 +190,11 @@ export default function BookingScreen({
       setIsProcessing(false);
       setStep(3);
       if (onShowToast) {
-        onShowToast(`Booking confirmed! Your reservation ref is #${bookingRefId}`);
+        onShowToast(
+          isHindi
+            ? `बुकिंग सफल हुई! आपका संदर्भ आईडी #${bookingRefId} है`
+            : `Booking confirmed! Your reservation ref is #${bookingRefId}`
+        );
       }
     }, 1200);
   };
@@ -178,54 +203,49 @@ export default function BookingScreen({
     if (onOpenQuote) {
       onOpenQuote({
         refId: bookingRefId,
-        pickupDate: pickupDate || 'TBD',
-        pickupTime: pickupTime || '10:00 AM',
-        returnDate: returnDate || 'TBD',
-        returnTime: returnTime || '08:00 PM',
+        bike: selectedBike,
+        pickupDate: pickupDate || 'Scheduled',
+        pickupTime: pickupTime || 'Hub Time',
+        returnDate: returnDate || 'Scheduled',
+        returnTime: returnTime || 'Hub Time',
         days: rentalDays,
-        rentalCharge: rentalTotal,
+        rentalFee: rentalTotal,
         deposit: securityDeposit,
         total: totalPayable,
+        riderName: riderName || 'Rider',
+        riderPhone: countryCode + riderPhone,
+        riderEmail: riderEmail || 'rider@example.com',
       });
     }
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.pageInner}>
-        {/* ================= STEPPER HEADER ================= */}
-        <View style={styles.stepperContainer}>
-          <TouchableOpacity
-            style={styles.stepItem}
-            onPress={() => step > 1 && setStep(1)}
-            activeOpacity={step > 1 ? 0.7 : 1}
-          >
-            <View style={[styles.stepCircle, step >= 1 ? styles.stepCircleActive : styles.stepCircleInactive]}>
-              {step > 1 ? (
-                <Check size={14} color="#050B14" strokeWidth={3} />
-              ) : (
-                <Text style={styles.stepCircleNumActive}>1</Text>
-              )}
+    <View style={styles.screenWrapper}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Step Indicator Header */}
+        <View style={styles.stepsHeader}>
+          <View style={styles.stepIndicatorRow}>
+            <View style={[styles.stepDot, step >= 1 && styles.stepDotActive]}>
+              <Text style={[styles.stepDotText, step >= 1 && styles.stepDotTextActive]}>1</Text>
             </View>
-            <Text style={[styles.stepText, step === 1 ? styles.stepTextActive : styles.stepTextInactive]}>
-              DATE SELECTION
-            </Text>
-          </TouchableOpacity>
-
-          <View style={[styles.stepDividerLine, step >= 2 && styles.stepDividerLineActive]} />
-
-          <View style={styles.stepItem}>
-            <View style={[styles.stepCircle, step >= 2 ? styles.stepCircleActive : styles.stepCircleInactive]}>
-              <Text style={step >= 2 ? styles.stepCircleNumActive : styles.stepCircleNumInactive}>2</Text>
+            <View style={[styles.stepLine, step >= 2 && styles.stepLineActive]} />
+            <View style={[styles.stepDot, step >= 2 && styles.stepDotActive]}>
+              <Text style={[styles.stepDotText, step >= 2 && styles.stepDotTextActive]}>2</Text>
             </View>
-            <Text style={[styles.stepText, step >= 2 ? styles.stepTextActive : styles.stepTextInactive]}>
-              SUMMARY & PAYMENT
-            </Text>
+            <View style={[styles.stepLine, step >= 3 && styles.stepLineActive]} />
+            <View style={[styles.stepDot, step >= 3 && styles.stepDotActive]}>
+              <Text style={[styles.stepDotText, step >= 3 && styles.stepDotTextActive]}>3</Text>
+            </View>
           </View>
+          <Text style={styles.stepTitleText}>
+            {step === 1 && t('booking.step1', 'Step 1: Machine & Schedule')}
+            {step === 2 && t('booking.step2', 'Step 2: Rider Details')}
+            {step === 3 && t('booking.step3', 'Step 3: Payment & Confirm')}
+          </Text>
         </View>
 
         {/* Guest Warning Banner if not logged in */}
@@ -234,12 +254,16 @@ export default function BookingScreen({
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
               <ShieldCheck size={20} color="#38BDF8" />
               <View style={{ flex: 1 }}>
-                <Text style={styles.guestAlertTitle}>Login Required to Reserve</Text>
-                <Text style={styles.guestAlertSub}>Please sign in or register to complete your motorbike booking.</Text>
+                <Text style={styles.guestAlertTitle}>
+                  {isHindi ? 'बुकिंग के लिए लॉगिन अनिवार्य है' : 'Login Required to Reserve'}
+                </Text>
+                <Text style={styles.guestAlertSub}>
+                  {isHindi ? 'मोटरसाइकिल बुक करने के लिए कृपया साइन इन करें।' : 'Please sign in or register to complete your motorbike booking.'}
+                </Text>
               </View>
             </View>
             <TouchableOpacity style={styles.guestLoginBtn} onPress={onOpenAuth} activeOpacity={0.8}>
-              <Text style={styles.guestLoginBtnText}>Log In / Sign Up</Text>
+              <Text style={styles.guestLoginBtnText}>{t('nav.login', 'Log In')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -252,9 +276,13 @@ export default function BookingScreen({
               {step === 1 ? (
                 /* STEP 1: DATE & TIME SELECTION */
                 <View style={[styles.card, SHADOWS.card]}>
-                  <Text style={styles.cardHeading}>When are you riding?</Text>
+                  <Text style={styles.cardHeading}>
+                    {isHindi ? 'अपनी सवारी का समय चुनें' : 'When are you riding?'}
+                  </Text>
                   <Text style={styles.cardSubheading}>
-                    Select your pickup and return dates to see vehicle availability and exact pricing.
+                    {isHindi
+                      ? 'कैलेंडर से पिकअप और वापसी की तारीखें चुनें।'
+                      : 'Select your pickup and return dates from the interactive calendar.'}
                   </Text>
 
                   {/* 2x2 Form Inputs Grid */}
@@ -264,24 +292,33 @@ export default function BookingScreen({
                       <View style={styles.formFieldCol}>
                         <View style={styles.fieldLabelRow}>
                           <Calendar size={13} color="#94A3B8" />
-                          <Text style={styles.fieldLabelText}>PICKUP DATE</Text>
+                          <Text style={styles.fieldLabelText}>
+                            {t('booking.pickupDate', 'PICKUP DATE')}
+                          </Text>
                         </View>
-                        <View style={styles.inputBoxWithIcon}>
-                          <TextInput
-                            style={styles.textInputInside}
-                            value={pickupDate}
-                            onChangeText={setPickupDate}
-                            placeholder="MM/DD/YYYY"
-                            placeholderTextColor="#475569"
-                          />
-                          <Calendar size={16} color="#64748B" />
-                        </View>
+                        <TouchableOpacity
+                          style={styles.calendarInputBtn}
+                          onPress={() => setCalendarTarget('pickup')}
+                          activeOpacity={0.8}
+                        >
+                          <Text
+                            style={pickupDate ? styles.calendarInputValue : styles.calendarInputPlaceholder}
+                            numberOfLines={1}
+                          >
+                            {pickupDate || t('booking.selectDatePrompt', 'Choose Date from Calendar')}
+                          </Text>
+                          <View style={styles.calendarIconBtn}>
+                            <Calendar size={16} color="#38BDF8" />
+                          </View>
+                        </TouchableOpacity>
                       </View>
 
                       <View style={styles.formFieldCol}>
                         <View style={styles.fieldLabelRow}>
                           <Clock size={13} color="#94A3B8" />
-                          <Text style={styles.fieldLabelText}>PICKUP TIME</Text>
+                          <Text style={styles.fieldLabelText}>
+                            {t('booking.pickupTime', 'PICKUP TIME')}
+                          </Text>
                         </View>
                         <TouchableOpacity
                           style={styles.dropdownBox}
@@ -289,7 +326,7 @@ export default function BookingScreen({
                           activeOpacity={0.8}
                         >
                           <Text style={pickupTime ? styles.dropdownValueText : styles.dropdownPlaceholderText} numberOfLines={1}>
-                            {pickupTime || 'Select Pickup Time'}
+                            {pickupTime || t('booking.timePlaceholder', 'Select Pickup Time')}
                           </Text>
                           <ChevronDown size={16} color="#64748B" />
                         </TouchableOpacity>
@@ -301,24 +338,33 @@ export default function BookingScreen({
                       <View style={styles.formFieldCol}>
                         <View style={styles.fieldLabelRow}>
                           <Calendar size={13} color="#94A3B8" />
-                          <Text style={styles.fieldLabelText}>RETURN DATE</Text>
+                          <Text style={styles.fieldLabelText}>
+                            {t('booking.returnDate', 'RETURN DATE')}
+                          </Text>
                         </View>
-                        <View style={styles.inputBoxWithIcon}>
-                          <TextInput
-                            style={styles.textInputInside}
-                            value={returnDate}
-                            onChangeText={setReturnDate}
-                            placeholder="MM/DD/YYYY"
-                            placeholderTextColor="#475569"
-                          />
-                          <Calendar size={16} color="#64748B" />
-                        </View>
+                        <TouchableOpacity
+                          style={styles.calendarInputBtn}
+                          onPress={() => setCalendarTarget('return')}
+                          activeOpacity={0.8}
+                        >
+                          <Text
+                            style={returnDate ? styles.calendarInputValue : styles.calendarInputPlaceholder}
+                            numberOfLines={1}
+                          >
+                            {returnDate || t('booking.selectDatePrompt', 'Choose Date from Calendar')}
+                          </Text>
+                          <View style={styles.calendarIconBtn}>
+                            <Calendar size={16} color="#38BDF8" />
+                          </View>
+                        </TouchableOpacity>
                       </View>
 
                       <View style={styles.formFieldCol}>
                         <View style={styles.fieldLabelRow}>
                           <Clock size={13} color="#94A3B8" />
-                          <Text style={styles.fieldLabelText}>RETURN TIME</Text>
+                          <Text style={styles.fieldLabelText}>
+                            {t('booking.returnTime', 'RETURN TIME')}
+                          </Text>
                         </View>
                         <TouchableOpacity
                           style={styles.dropdownBox}
@@ -326,7 +372,7 @@ export default function BookingScreen({
                           activeOpacity={0.8}
                         >
                           <Text style={returnTime ? styles.dropdownValueText : styles.dropdownPlaceholderText} numberOfLines={1}>
-                            {returnTime || 'Select Return Time'}
+                            {returnTime || t('booking.timePlaceholder', 'Select Return Time')}
                           </Text>
                           <ChevronDown size={16} color="#64748B" />
                         </TouchableOpacity>
@@ -339,33 +385,35 @@ export default function BookingScreen({
                     <View style={styles.timeDropdownCard}>
                       <View style={styles.timeDropdownHeader}>
                         <Text style={styles.timeDropdownTitle}>
-                          {activePicker === 'pickup' ? 'Select Pickup Time' : 'Select Return Time'}
+                          {activePicker === 'pickup'
+                            ? (isHindi ? 'पिकअप समय चुनें' : 'Select Pickup Time')
+                            : (isHindi ? 'वापसी समय चुनें' : 'Select Return Time')}
                         </Text>
                         <TouchableOpacity onPress={() => setActivePicker(null)}>
                           <X size={16} color="#94A3B8" />
                         </TouchableOpacity>
                       </View>
                       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                        {(activePicker === 'pickup' ? PICKUP_TIMES : RETURN_TIMES).map((t) => (
+                        {(activePicker === 'pickup' ? PICKUP_TIMES : RETURN_TIMES).map((item) => (
                           <TouchableOpacity
-                            key={t}
+                            key={item}
                             style={[
                               styles.timeChip,
-                              (activePicker === 'pickup' ? pickupTime === t : returnTime === t) && styles.timeChipActive,
+                              (activePicker === 'pickup' ? pickupTime === item : returnTime === item) && styles.timeChipActive,
                             ]}
                             onPress={() => {
-                              if (activePicker === 'pickup') setPickupTime(t);
-                              else setReturnTime(t);
+                              if (activePicker === 'pickup') setPickupTime(item);
+                              else setReturnTime(item);
                               setActivePicker(null);
                             }}
                           >
                             <Text
                               style={[
                                 styles.timeChipText,
-                                (activePicker === 'pickup' ? pickupTime === t : returnTime === t) && styles.timeChipTextActive,
+                                (activePicker === 'pickup' ? pickupTime === item : returnTime === item) && styles.timeChipTextActive,
                               ]}
                             >
-                              {t}
+                              {item}
                             </Text>
                           </TouchableOpacity>
                         ))}
@@ -373,11 +421,16 @@ export default function BookingScreen({
                     </View>
                   )}
 
-                  {/* Pickup Hub Info Pill */}
-                  <View style={styles.hubInfoPill}>
-                    <ShieldCheck size={16} color="#38BDF8" />
-                    <Text style={styles.hubInfoText}>
-                      Pickup Hub: Central Metro Station Hub (08:00 AM – 09:30 PM)
+                  {/* Pickup Hub Details */}
+                  <View style={styles.hubDetailsBox}>
+                    <Text style={styles.hubDetailsTitle}>
+                      {t('booking.hubLocation', 'PICKUP & RETURN HUB')}
+                    </Text>
+                    <Text style={styles.hubDetailsName}>
+                      {t('booking.hubName', 'Central Motorcycle Hub (Ring Road, Sector 4)')}
+                    </Text>
+                    <Text style={styles.hubDetailsNote}>
+                      {t('booking.hubNote', 'Open daily 08:00 AM – 09:00 PM. Doorstep delivery available upon request.')}
                     </Text>
                   </View>
 
@@ -387,33 +440,47 @@ export default function BookingScreen({
                     onPress={handleContinueToSummary}
                     activeOpacity={0.85}
                   >
-                    <Text style={styles.continueBtnText}>Continue to Summary & Payment</Text>
+                    <Text style={styles.continueBtnText}>
+                      {t('booking.proceedRider', 'Proceed to Rider Details')}
+                    </Text>
                     <ArrowRight size={17} color="#FFFFFF" strokeWidth={2.5} />
                   </TouchableOpacity>
                 </View>
               ) : (
                 /* STEP 2: RIDER DETAILS & PAYMENT METHOD */
                 <View style={[styles.card, SHADOWS.card]}>
-                  <Text style={styles.cardHeading}>Rider Information</Text>
+                  <Text style={styles.cardHeading}>
+                    {t('booking.step2', 'Rider Information')}
+                  </Text>
                   <Text style={styles.cardSubheading}>
-                    Provide active rider contact details for vehicle handover and booking confirmation.
+                    {t('booking.step2Sub', 'Provide rider credentials and emergency details')}
                   </Text>
 
                   {/* Rider Details - All fields hold placeholders only! */}
                   <View style={{ marginBottom: 14 }}>
-                    <Text style={styles.step2Label}>FULL NAME</Text>
+                    <View style={styles.fieldLabelRow}>
+                      <User size={13} color="#94A3B8" />
+                      <Text style={styles.step2Label}>
+                        {t('booking.riderName', 'FULL LEGAL NAME')}
+                      </Text>
+                    </View>
                     <TextInput
                       style={styles.step2Input}
                       value={riderName}
                       onChangeText={setRiderName}
-                      placeholder="e.g. Rahul Verma"
+                      placeholder={t('booking.riderNamePlaceholder', 'Enter full name as on Driving License')}
                       placeholderTextColor="#475569"
                     />
                   </View>
 
                   <View style={styles.step2Row}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.step2Label}>PHONE NUMBER</Text>
+                      <View style={styles.fieldLabelRow}>
+                        <Phone size={13} color="#94A3B8" />
+                        <Text style={styles.step2Label}>
+                          {t('booking.riderPhone', 'PHONE NUMBER')}
+                        </Text>
+                      </View>
                       <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
                         <TouchableOpacity
                           style={styles.countryBtn}
@@ -426,8 +493,8 @@ export default function BookingScreen({
                         <TextInput
                           style={[styles.step2Input, { flex: 1 }]}
                           value={riderPhone}
-                          onChangeText={(t) => setRiderPhone(t.replace(/\D/g, ''))}
-                          placeholder={countryCode === '+91' ? '10-digit number' : 'Mobile number'}
+                          onChangeText={(text) => setRiderPhone(text.replace(/\D/g, ''))}
+                          placeholder={t('booking.riderPhonePlaceholder', '10-digit mobile number')}
                           placeholderTextColor="#475569"
                           keyboardType="phone-pad"
                           maxLength={15}
@@ -436,12 +503,17 @@ export default function BookingScreen({
                     </View>
 
                     <View style={{ flex: 1.2 }}>
-                      <Text style={styles.step2Label}>EMAIL ADDRESS</Text>
+                      <View style={styles.fieldLabelRow}>
+                        <Mail size={13} color="#94A3B8" />
+                        <Text style={styles.step2Label}>
+                          {t('booking.riderEmail', 'EMAIL ADDRESS')}
+                        </Text>
+                      </View>
                       <TextInput
                         style={styles.step2Input}
                         value={riderEmail}
                         onChangeText={setRiderEmail}
-                        placeholder="e.g. rahul@example.com"
+                        placeholder={t('booking.riderEmailPlaceholder', 'name@example.com')}
                         placeholderTextColor="#475569"
                         keyboardType="email-address"
                         autoCapitalize="none"
@@ -449,9 +521,36 @@ export default function BookingScreen({
                     </View>
                   </View>
 
+                  {/* Date of Birth Field - with Calendar Picker */}
+                  <View style={{ marginTop: 14 }}>
+                    <View style={styles.fieldLabelRow}>
+                      <CalendarDays size={13} color="#94A3B8" />
+                      <Text style={styles.step2Label}>
+                        {t('booking.dob', 'DATE OF BIRTH')}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.calendarInputBtn}
+                      onPress={() => setCalendarTarget('dob')}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={riderDob ? styles.calendarInputValue : styles.calendarInputPlaceholder}
+                        numberOfLines={1}
+                      >
+                        {riderDob || t('booking.dobPlaceholder', 'Select Birth Date from Calendar')}
+                      </Text>
+                      <View style={styles.calendarIconBtn}>
+                        <CalendarDays size={16} color="#38BDF8" />
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+
                   {/* Payment Methods */}
                   <View style={{ marginTop: 20 }}>
-                    <Text style={styles.step2Label}>PAYMENT METHOD</Text>
+                    <Text style={styles.step2Label}>
+                      {t('booking.paymentMethod', 'SELECT PAYMENT METHOD')}
+                    </Text>
                     <View style={styles.paymentMethodsRow}>
                       <TouchableOpacity
                         style={[
@@ -463,7 +562,7 @@ export default function BookingScreen({
                       >
                         <Smartphone size={18} color={paymentMethod === 'upi' ? '#38BDF8' : '#94A3B8'} />
                         <Text style={[styles.paymentMethodText, paymentMethod === 'upi' && styles.paymentMethodTextActive]}>
-                          UPI / QR
+                          {t('booking.upi', 'UPI / QR')}
                         </Text>
                       </TouchableOpacity>
 
@@ -477,7 +576,7 @@ export default function BookingScreen({
                       >
                         <CreditCard size={18} color={paymentMethod === 'card' ? '#38BDF8' : '#94A3B8'} />
                         <Text style={[styles.paymentMethodText, paymentMethod === 'card' && styles.paymentMethodTextActive]}>
-                          Credit / Debit
+                          {t('booking.card', 'Credit / Debit')}
                         </Text>
                       </TouchableOpacity>
 
@@ -491,7 +590,7 @@ export default function BookingScreen({
                       >
                         <ShieldCheck size={18} color={paymentMethod === 'pickup' ? '#38BDF8' : '#94A3B8'} />
                         <Text style={[styles.paymentMethodText, paymentMethod === 'pickup' && styles.paymentMethodTextActive]}>
-                          Pay at Pickup
+                          {t('booking.cash', 'Pay at Hub')}
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -505,7 +604,9 @@ export default function BookingScreen({
                       activeOpacity={0.8}
                     >
                       <ArrowLeft size={16} color="#94A3B8" />
-                      <Text style={styles.backBtnText}>Back</Text>
+                      <Text style={styles.backBtnText}>
+                        {t('common.back', 'Back')}
+                      </Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -519,7 +620,7 @@ export default function BookingScreen({
                       ) : (
                         <>
                           <Text style={styles.confirmBtnText}>
-                            Confirm & Reserve (₹{totalPayable.toLocaleString('en-IN')})
+                            {t('booking.confirmBookingBtn', 'Confirm Reservation & Pay')} (₹{totalPayable.toLocaleString('en-IN')})
                           </Text>
                           <ArrowRight size={17} color="#FFFFFF" strokeWidth={2.5} />
                         </>
@@ -551,26 +652,28 @@ export default function BookingScreen({
                 {/* Price Breakdown Line Items */}
                 <View style={styles.priceBreakdownWrap}>
                   <View style={styles.priceRow}>
-                    <Text style={styles.priceLabel}>Rental Fee</Text>
+                    <Text style={styles.priceLabel}>{t('booking.dailyRate', 'Daily Rate')}</Text>
                     <Text style={styles.priceValue}>
-                      ₹{selectedBike.pricePerDay.toLocaleString('en-IN')} / day
+                      ₹{selectedBike.pricePerDay.toLocaleString('en-IN')} {t('fleet.perDay', '/day')}
                     </Text>
                   </View>
 
                   <View style={styles.priceRow}>
-                    <Text style={styles.priceLabel}>Security Deposit</Text>
+                    <Text style={styles.priceLabel}>{t('booking.refundableDeposit', 'Security Deposit')}</Text>
                     <Text style={[styles.priceValue, styles.priceValueCyan]}>
                       ₹{securityDeposit.toLocaleString('en-IN')}*
                     </Text>
                   </View>
 
                   <View style={styles.priceRow}>
-                    <Text style={styles.priceLabel}>Rental Duration</Text>
-                    <Text style={styles.priceValue}>{rentalDays} Days</Text>
+                    <Text style={styles.priceLabel}>{isHindi ? 'किराये की अवधि' : 'Rental Duration'}</Text>
+                    <Text style={styles.priceValue}>
+                      {rentalDays} {isHindi ? 'दिन' : 'Days'}
+                    </Text>
                   </View>
 
                   <View style={[styles.priceRow, styles.totalRow]}>
-                    <Text style={styles.totalLabel}>Total Payable</Text>
+                    <Text style={styles.totalLabel}>{t('booking.totalPayable', 'Total Payable')}</Text>
                     <Text style={styles.totalValue}>₹{totalPayable.toLocaleString('en-IN')}</Text>
                   </View>
                 </View>
@@ -579,7 +682,7 @@ export default function BookingScreen({
                 <View style={styles.refundNoteBox}>
                   <ShieldCheck size={16} color="#34D399" />
                   <Text style={styles.refundNoteText}>
-                    100% Refundable Security Deposit credited back within 24-48h of return.
+                    {t('booking.depositRefundNote', '100% Refundable Security Deposit credited back within 24-48h of return.')}
                   </Text>
                 </View>
               </View>
@@ -594,31 +697,31 @@ export default function BookingScreen({
               <Check size={36} color="#FFFFFF" strokeWidth={3} />
             </View>
 
-            <Text style={styles.successHeading}>Booking Confirmed!</Text>
+            <Text style={styles.successHeading}>{t('booking.successTitle', 'Booking Confirmed!')}</Text>
             <Text style={styles.successSubheading}>
-              Your machine is reserved. A confirmation SMS and WhatsApp message have been sent with pickup hub directions.
+              {t('booking.successSub', 'Your motorcycle reservation is confirmed. We have sent the confirmation to your phone.')}
             </Text>
 
             <View style={styles.refCodeBox}>
-              <Text style={styles.refCodeLabel}>RESERVATION REFERENCE ID</Text>
+              <Text style={styles.refCodeLabel}>{t('booking.bookingId', 'RESERVATION REFERENCE ID')}</Text>
               <Text style={styles.refCodeValue}>#{bookingRefId}</Text>
             </View>
 
             <View style={styles.summaryGrid}>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryItemLabel}>RESERVED BIKE</Text>
+                <Text style={styles.summaryItemLabel}>{t('booking.bikeName', 'RESERVED BIKE')}</Text>
                 <Text style={styles.summaryItemValue}>{selectedBike.name}</Text>
               </View>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryItemLabel}>PICKUP DATE</Text>
+                <Text style={styles.summaryItemLabel}>{t('booking.pickupDate', 'PICKUP DATE')}</Text>
                 <Text style={styles.summaryItemValue}>{pickupDate || 'Scheduled'}</Text>
               </View>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryItemLabel}>RIDER NAME</Text>
+                <Text style={styles.summaryItemLabel}>{t('booking.riderName', 'RIDER NAME')}</Text>
                 <Text style={styles.summaryItemValue}>{riderName || 'Rider'}</Text>
               </View>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryItemLabel}>AMOUNT PAYABLE</Text>
+                <Text style={styles.summaryItemLabel}>{t('booking.totalPayable', 'AMOUNT PAYABLE')}</Text>
                 <Text style={[styles.summaryItemValue, { color: '#38BDF8' }]}>₹{totalPayable.toLocaleString('en-IN')}</Text>
               </View>
             </View>
@@ -630,7 +733,9 @@ export default function BookingScreen({
                 activeOpacity={0.8}
               >
                 <FileText size={16} color="#38BDF8" />
-                <Text style={styles.downloadQuoteBtnText}>Download Official Estimate / Quote</Text>
+                <Text style={styles.downloadQuoteBtnText}>
+                  {isHindi ? 'कोटेशन / रसीद डाउनलोड करें' : 'Download Official Estimate / Quote'}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -638,25 +743,58 @@ export default function BookingScreen({
                 onPress={() => navigation?.navigate('Home')}
                 activeOpacity={0.8}
               >
-                <Text style={styles.returnHomeBtnText}>Back to Home Fleet</Text>
+                <Text style={styles.returnHomeBtnText}>{t('booking.backToHome', 'Back to Home')}</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
-      </View>
+      </ScrollView>
+
+      {/* Interactive Calendar Picker Modal */}
+      <CalendarPickerModal
+        visible={calendarTarget !== null}
+        onClose={() => setCalendarTarget(null)}
+        mode={calendarTarget === 'dob' ? 'past' : 'future'}
+        initialDate={
+          calendarTarget === 'pickup'
+            ? pickupDate
+            : calendarTarget === 'return'
+            ? returnDate
+            : riderDob
+        }
+        minDate={
+          calendarTarget === 'return' && pickupDate
+            ? pickupDate
+            : undefined
+        }
+        title={
+          calendarTarget === 'pickup'
+            ? t('calendar.selectPickupDate', 'Select Pickup Date')
+            : calendarTarget === 'return'
+            ? t('calendar.selectReturnDate', 'Select Return Date')
+            : t('calendar.selectBirthDate', 'Select Date of Birth')
+        }
+        onSelectDate={(dateStr) => {
+          if (calendarTarget === 'pickup') {
+            setPickupDate(dateStr);
+            if (returnDate && returnDate < dateStr) setReturnDate('');
+          } else if (calendarTarget === 'return') {
+            setReturnDate(dateStr);
+          } else if (calendarTarget === 'dob') {
+            setRiderDob(dateStr);
+          }
+          setCalendarTarget(null);
+        }}
+      />
 
       {/* Country Code Modal */}
       <Modal
         visible={isCountryModalOpen}
-        animationType="fade"
         transparent
+        animationType="fade"
         onRequestClose={() => setIsCountryModalOpen(false)}
       >
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setIsCountryModalOpen(false)}
-        >
+        <View style={styles.modalBackdrop}>
           <View style={styles.countryModalCard}>
             <View style={styles.countryModalHeader}>
               <Text style={styles.countryModalTitle}>Select Country Code</Text>
@@ -666,7 +804,7 @@ export default function BookingScreen({
             </View>
             <FlatList
               data={COUNTRY_CODES}
-              keyExtractor={(item) => item.code + item.country}
+              keyExtractor={(item) => item.code + item.name}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.countryItem}
@@ -675,125 +813,116 @@ export default function BookingScreen({
                     setIsCountryModalOpen(false);
                   }}
                 >
-                  <Text style={styles.countryFlag}>{item.flag}</Text>
-                  <Text style={styles.countryName}>{item.country}</Text>
-                  <Text style={styles.countryDialCode}>{item.code}</Text>
+                  <Text style={styles.countryItemText}>
+                    {item.name} ({item.code})
+                  </Text>
                 </TouchableOpacity>
               )}
             />
           </View>
-        </TouchableOpacity>
+        </View>
       </Modal>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenWrapper: {
+    flex: 1,
+    backgroundColor: COLORS.bgDark,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.bgDark,
   },
   contentContainer: {
-    paddingBottom: 60,
-  },
-  pageInner: {
-    width: '100%',
-    maxWidth: 1200,
-    alignSelf: 'center',
     paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingTop: 20,
+    paddingBottom: 60,
+    maxWidth: 1200,
+    width: '100%',
+    alignSelf: 'center',
   },
-  stepperContainer: {
+  stepsHeader: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  stepIndicatorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: 8,
   },
-  stepItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepCircle: {
+  stepDot: {
     width: 28,
     height: 28,
     borderRadius: 14,
+    backgroundColor: COLORS.bgCardAlt,
+    borderWidth: 1,
+    borderColor: COLORS.borderCard,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepCircleActive: {
+  stepDotActive: {
     backgroundColor: '#0284C7',
+    borderColor: '#38BDF8',
   },
-  stepCircleInactive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  stepCircleNumActive: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  stepCircleNumInactive: {
-    color: '#94A3B8',
+  stepDotText: {
     fontSize: 12,
     fontWeight: '700',
+    color: COLORS.textMuted,
   },
-  stepText: {
-    fontSize: 12,
-    letterSpacing: 0.8,
-  },
-  stepTextActive: {
+  stepDotTextActive: {
     color: '#FFFFFF',
-    fontWeight: '800',
   },
-  stepTextInactive: {
-    color: '#64748B',
-    fontWeight: '600',
-  },
-  stepDividerLine: {
-    width: 60,
+  stepLine: {
+    width: 44,
     height: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    marginHorizontal: 16,
+    backgroundColor: COLORS.borderCard,
+    marginHorizontal: 4,
   },
-  stepDividerLineActive: {
+  stepLineActive: {
     backgroundColor: '#0284C7',
   },
+  stepTitleText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#38BDF8',
+    letterSpacing: 0.3,
+  },
   guestAlertBanner: {
+    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+    borderRadius: RADIUS.md,
+    padding: 14,
+    marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(2, 132, 199, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.35)',
-    borderRadius: RADIUS.lg,
-    padding: 16,
-    marginBottom: 20,
-    gap: 14,
-    flexWrap: 'wrap',
+    gap: 12,
   },
   guestAlertTitle: {
     color: '#FFFFFF',
+    fontSize: 13.5,
     fontWeight: '700',
-    fontSize: 14,
   },
   guestAlertSub: {
     color: '#94A3B8',
-    fontSize: 12.5,
+    fontSize: 11.5,
   },
   guestLoginBtn: {
     backgroundColor: '#0284C7',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: RADIUS.full,
   },
   guestLoginBtnText: {
     color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: '700',
-    fontSize: 12.5,
   },
   mainLayout: {
-    width: '100%',
-    gap: 24,
+    gap: 20,
   },
   mainLayoutRow: {
     flexDirection: 'row',
@@ -812,33 +941,32 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bgCard,
     borderWidth: 1,
     borderColor: COLORS.borderCard,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.lg,
     padding: 24,
   },
   cardHeading: {
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: '900',
     color: COLORS.textPrimary,
-    marginBottom: 6,
+    marginBottom: 4,
+    letterSpacing: -0.3,
   },
   cardSubheading: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: COLORS.textSecondary,
-    lineHeight: 19,
     marginBottom: 20,
+    lineHeight: 18,
   },
   formGrid: {
     gap: 14,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   formRow: {
     flexDirection: 'row',
     gap: 14,
-    flexWrap: 'wrap',
   },
   formFieldCol: {
     flex: 1,
-    minWidth: 220,
     gap: 6,
   },
   fieldLabelRow: {
@@ -847,54 +975,65 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   fieldLabelText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '800',
-    color: COLORS.textSecondary,
+    color: '#94A3B8',
     letterSpacing: 0.8,
   },
-  inputBoxWithIcon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.bgCardAlt,
+  calendarInputBtn: {
+    backgroundColor: '#111A2E',
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: RADIUS.md,
     paddingHorizontal: 14,
-    height: 46,
-  },
-  textInputInside: {
-    flex: 1,
-    color: COLORS.textPrimary,
-    fontSize: 13.5,
-    height: '100%',
-  },
-  dropdownBox: {
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.bgCardAlt,
+  },
+  calendarInputValue: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  calendarInputPlaceholder: {
+    color: '#64748B',
+    fontSize: 12.5,
+  },
+  calendarIconBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dropdownBox: {
+    backgroundColor: '#111A2E',
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: RADIUS.md,
     paddingHorizontal: 14,
-    height: 46,
+    height: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   dropdownValueText: {
-    color: COLORS.textPrimary,
-    fontSize: 13,
-    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 12.5,
+    fontWeight: '600',
   },
   dropdownPlaceholderText: {
-    color: '#475569',
-    fontSize: 13,
-    flex: 1,
+    color: '#64748B',
+    fontSize: 12.5,
   },
   timeDropdownCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: RADIUS.md,
+    backgroundColor: '#0F1A2E',
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.35)',
-    padding: 12,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+    borderRadius: RADIUS.md,
+    padding: 14,
     marginBottom: 16,
   },
   timeDropdownHeader: {
@@ -904,151 +1043,159 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   timeDropdownTitle: {
-    color: '#38BDF8',
     fontSize: 12,
     fontWeight: '800',
+    color: '#38BDF8',
+    letterSpacing: 0.5,
   },
   timeChip: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: RADIUS.full,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    borderColor: 'rgba(255, 255, 255, 0.09)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: RADIUS.sm,
   },
   timeChipActive: {
-    backgroundColor: '#0284C7',
+    backgroundColor: 'rgba(2, 132, 199, 0.25)',
     borderColor: '#38BDF8',
   },
   timeChipText: {
-    color: '#94A3B8',
-    fontSize: 12,
+    fontSize: 11,
+    color: '#CBD5E1',
     fontWeight: '600',
   },
   timeChipTextActive: {
     color: '#FFFFFF',
     fontWeight: '800',
   },
-  hubInfoPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+  hubDetailsBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
     borderRadius: RADIUS.md,
-    padding: 12,
-    marginBottom: 22,
+    padding: 14,
+    marginBottom: 20,
   },
-  hubInfoText: {
-    color: '#E2E8F0',
-    fontSize: 12.5,
+  hubDetailsTitle: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#38BDF8',
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  hubDetailsName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  hubDetailsNote: {
+    fontSize: 11.5,
+    color: '#94A3B8',
+    lineHeight: 16,
   },
   continueBtn: {
     backgroundColor: '#0284C7',
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.5)',
-    borderRadius: RADIUS.full,
-    paddingVertical: 13,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    borderRadius: RADIUS.full,
+    paddingVertical: 12,
     shadowColor: '#0284C7',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.35,
-    shadowRadius: 10,
+    shadowRadius: 8,
     elevation: 4,
   },
   continueBtnText: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   step2Label: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '800',
-    color: COLORS.textSecondary,
+    color: '#94A3B8',
     letterSpacing: 0.8,
     marginBottom: 6,
   },
   step2Input: {
-    backgroundColor: COLORS.bgCardAlt,
+    backgroundColor: '#111A2E',
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: RADIUS.md,
     paddingHorizontal: 14,
-    height: 46,
-    color: COLORS.textPrimary,
-    fontSize: 13.5,
+    height: 44,
+    color: '#FFFFFF',
+    fontSize: 13,
   },
   step2Row: {
     flexDirection: 'row',
     gap: 12,
-    flexWrap: 'wrap',
   },
   countryBtn: {
+    backgroundColor: '#111A2E',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 10,
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: COLORS.bgCardAlt,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: 10,
-    height: 46,
   },
   countryBtnText: {
-    color: COLORS.textPrimary,
-    fontSize: 13,
+    color: '#FFFFFF',
+    fontSize: 12.5,
     fontWeight: '700',
   },
   paymentMethodsRow: {
     flexDirection: 'row',
     gap: 10,
-    flexWrap: 'wrap',
+    marginTop: 6,
+    marginBottom: 20,
   },
   paymentMethodCard: {
     flex: 1,
-    minWidth: 110,
-    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: RADIUS.md,
+    paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: COLORS.bgCardAlt,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    borderRadius: RADIUS.md,
-    paddingVertical: 12,
+    gap: 6,
   },
   paymentMethodCardActive: {
+    backgroundColor: 'rgba(2, 132, 199, 0.18)',
     borderColor: '#38BDF8',
-    backgroundColor: 'rgba(2, 132, 199, 0.15)',
   },
   paymentMethodText: {
+    fontSize: 11.5,
     color: '#94A3B8',
-    fontSize: 12.5,
     fontWeight: '600',
   },
   paymentMethodTextActive: {
-    color: '#FFFFFF',
+    color: '#38BDF8',
     fontWeight: '800',
   },
   step2Actions: {
     flexDirection: 'row',
-    alignItems: 'center',
     gap: 12,
-    marginTop: 24,
+    alignItems: 'center',
   },
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: RADIUS.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   backBtnText: {
     color: '#94A3B8',
@@ -1058,33 +1205,26 @@ const styles = StyleSheet.create({
   confirmBtn: {
     flex: 1,
     backgroundColor: '#0284C7',
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.4)',
-    borderRadius: RADIUS.full,
-    paddingVertical: 13,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: '#0284C7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 4,
+    paddingVertical: 12,
+    borderRadius: RADIUS.full,
   },
   confirmBtnText: {
     color: '#FFFFFF',
     fontSize: 13.5,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   vehicleCard: {
-    padding: 20,
+    gap: 12,
   },
   bikeImageWrap: {
+    width: '100%',
     height: 180,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.md,
     overflow: 'hidden',
-    marginBottom: 14,
     backgroundColor: COLORS.bgCardAlt,
   },
   bikeImage: {
@@ -1092,22 +1232,20 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   bikeName: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: '900',
     color: COLORS.textPrimary,
-    marginBottom: 2,
   },
   bikeModel: {
     fontSize: 12.5,
     color: COLORS.textSecondary,
-    marginBottom: 14,
+    marginTop: -8,
   },
   priceBreakdownWrap: {
-    gap: 10,
     borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-    paddingTop: 14,
-    marginBottom: 16,
+    borderTopColor: COLORS.borderCard,
+    paddingTop: 12,
+    gap: 8,
   },
   priceRow: {
     flexDirection: 'row',
@@ -1115,11 +1253,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   priceLabel: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: COLORS.textSecondary,
   },
   priceValue: {
-    fontSize: 13.5,
+    fontSize: 13,
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
@@ -1128,17 +1266,17 @@ const styles = StyleSheet.create({
   },
   totalRow: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    borderTopColor: COLORS.borderCard,
     paddingTop: 10,
     marginTop: 4,
   },
   totalLabel: {
     fontSize: 15,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontWeight: '900',
+    color: COLORS.textPrimary,
   },
   totalValue: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '900',
     color: '#38BDF8',
   },
@@ -1149,19 +1287,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16, 185, 129, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(16, 185, 129, 0.25)',
-    borderRadius: RADIUS.md,
     padding: 10,
+    borderRadius: RADIUS.md,
   },
   refundNoteText: {
+    fontSize: 11,
     color: '#A7F3D0',
-    fontSize: 11.5,
     flex: 1,
+    lineHeight: 15,
   },
   successCard: {
-    maxWidth: 620,
-    alignSelf: 'center',
     alignItems: 'center',
     paddingVertical: 36,
+    maxWidth: 640,
+    alignSelf: 'center',
+    width: '100%',
   },
   successIconCircle: {
     width: 64,
@@ -1171,87 +1311,87 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 14,
-    elevation: 6,
   },
   successHeading: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '900',
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   successSubheading: {
-    fontSize: 13.5,
+    fontSize: 13,
     color: '#94A3B8',
     textAlign: 'center',
+    maxWidth: 440,
     lineHeight: 20,
     marginBottom: 20,
-    maxWidth: 500,
   },
   refCodeBox: {
     backgroundColor: 'rgba(2, 132, 199, 0.15)',
     borderWidth: 1,
-    borderColor: '#0284C7',
-    borderRadius: RADIUS.lg,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 20,
     paddingVertical: 12,
-    paddingHorizontal: 24,
     alignItems: 'center',
     marginBottom: 24,
   },
   refCodeLabel: {
-    fontSize: 10.5,
+    fontSize: 10,
     fontWeight: '800',
     color: '#38BDF8',
     letterSpacing: 1,
-    marginBottom: 3,
+    marginBottom: 2,
   },
   refCodeValue: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
     color: '#FFFFFF',
+    letterSpacing: 1,
   },
   summaryGrid: {
-    width: '100%',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
-    backgroundColor: COLORS.bgCardAlt,
-    borderRadius: RADIUS.lg,
-    padding: 16,
+    width: '100%',
     marginBottom: 24,
   },
   summaryItem: {
-    width: '47%',
-    padding: 8,
+    flex: 1,
+    minWidth: 120,
+    backgroundColor: COLORS.bgCardAlt,
+    padding: 12,
+    borderRadius: RADIUS.sm,
   },
   summaryItemLabel: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '800',
     color: '#64748B',
-    marginBottom: 3,
+    marginBottom: 4,
   },
   summaryItemValue: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   successActions: {
     width: '100%',
-    gap: 12,
+    gap: 10,
+    alignItems: 'center',
   },
   downloadQuoteBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.4)',
-    borderRadius: RADIUS.full,
-    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    backgroundColor: 'rgba(2, 132, 199, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.35)',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: RADIUS.full,
+    width: '100%',
+    maxWidth: 360,
   },
   downloadQuoteBtnText: {
     color: '#38BDF8',
@@ -1259,64 +1399,49 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   returnHomeBtn: {
-    backgroundColor: '#0284C7',
-    borderRadius: RADIUS.full,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 10,
   },
   returnHomeBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13.5,
-    fontWeight: '700',
+    color: '#94A3B8',
+    fontSize: 13,
+    fontWeight: '600',
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(5, 11, 20, 0.85)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: 20,
   },
   countryModalCard: {
+    backgroundColor: '#0F1A2E',
+    borderRadius: RADIUS.lg,
     width: '100%',
-    maxWidth: 400,
-    maxHeight: 460,
-    backgroundColor: '#0F172A',
-    borderRadius: RADIUS.xl,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    maxWidth: 380,
+    maxHeight: '70%',
+    padding: 16,
   },
   countryModalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   countryModalTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
     color: '#FFFFFF',
   },
   countryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
-    gap: 10,
+    borderBottomColor: 'rgba(255,255,255,0.04)',
   },
-  countryFlag: {
-    fontSize: 18,
-  },
-  countryName: {
-    flex: 1,
-    color: '#E2E8F0',
+  countryItemText: {
     fontSize: 13,
-  },
-  countryDialCode: {
-    color: '#38BDF8',
-    fontWeight: '700',
-    fontSize: 13,
+    color: '#CBD5E1',
   },
 });

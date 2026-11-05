@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import { Compass, User, ChevronLeft } from 'lucide-react-native';
+import { Compass, User, ChevronLeft, Globe } from 'lucide-react-native';
 import { COLORS, RADIUS } from '../theme/colors';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function CustomHeader({
   navigation,
@@ -12,6 +13,15 @@ export default function CustomHeader({
   onOpenWhatsApp,
   onStartBooking,
 }) {
+  const { language, toggleLanguage, t, isHindi } = useLanguage();
+
+  const handleBookPress = () => {
+    // Requirement: In navbar, clicking the booking button directly opens the Fleet (Motorbikes) page!
+    if (navigation) {
+      navigation.navigate('Motorbikes');
+    }
+  };
+
   return (
     <View style={styles.headerWrapper}>
       <View style={styles.headerContainer}>
@@ -33,7 +43,7 @@ export default function CustomHeader({
               <View style={styles.logoIcon}>
                 <Compass size={17} color="#FFFFFF" strokeWidth={2.3} />
               </View>
-              <Text style={styles.brandTitle}>THE ROAD EAGLE</Text>
+              <Text style={styles.brandTitle}>{t('nav.brand', 'THE ROAD EAGLE')}</Text>
             </TouchableOpacity>
           )}
 
@@ -45,19 +55,26 @@ export default function CustomHeader({
         </View>
 
         <View style={styles.headerRight}>
-          {/* Quick Book Action - Sober Sapphire Blue with subtle styling */}
+          {/* Quick Book Action - Directly navigates to Fleet (Motorbikes) page */}
           <TouchableOpacity
             style={styles.headerBookBtn}
-            onPress={() => {
-              if (onStartBooking) {
-                onStartBooking();
-              } else if (navigation) {
-                navigation.navigate('Booking');
-              }
-            }}
+            onPress={handleBookPress}
             activeOpacity={0.8}
           >
-            <Text style={styles.headerBookBtnText}>Book Now</Text>
+            <Text style={styles.headerBookBtnText}>{t('nav.bookNow', 'Book Now')}</Text>
+          </TouchableOpacity>
+
+          {/* Language Switcher Toggle next to Login */}
+          <TouchableOpacity
+            style={styles.langToggleBtn}
+            onPress={toggleLanguage}
+            activeOpacity={0.8}
+            accessibilityLabel="Switch Language"
+          >
+            <Globe size={14} color="#38BDF8" />
+            <Text style={styles.langToggleText}>
+              {isHindi ? 'English' : 'हिन्दी'}
+            </Text>
           </TouchableOpacity>
 
           {/* User Account Button */}
@@ -68,7 +85,7 @@ export default function CustomHeader({
           >
             <User size={15} color={COLORS.accentCyan} />
             <Text style={styles.userButtonText} numberOfLines={1}>
-              {user ? user.name.split(' ')[0] : 'Log In'}
+              {user ? user.name.split(' ')[0] : t('nav.login', 'Log In')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -140,7 +157,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   headerBookBtn: {
     backgroundColor: '#0284C7',
@@ -163,6 +180,22 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
   },
+  langToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: RADIUS.full,
+  },
+  langToggleText: {
+    color: '#38BDF8',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   userButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -170,7 +203,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bgCard,
     borderWidth: 1,
     borderColor: COLORS.borderCard,
-    paddingHorizontal: 14,
+    paddingHorizontal: 13,
     paddingVertical: 7,
     borderRadius: RADIUS.full,
   },

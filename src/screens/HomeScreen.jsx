@@ -28,6 +28,7 @@ import { BIKES_DATA, CATEGORIES_DATA, FAQS_DATA, TESTIMONIALS_DATA } from '../da
 import { IMAGES } from '../assets/images';
 import { COLORS, RADIUS, SHADOWS } from '../theme/colors';
 import BikeCard from '../components/BikeCard';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
@@ -38,6 +39,7 @@ export default function HomeScreen({
   onOpenWhatsApp,
   onOpenBookModal,
 }) {
+  const { t, isHindi } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
   const carouselScrollRef = useRef(null);
@@ -61,6 +63,17 @@ export default function HomeScreen({
     return b.categoryKey === selectedCategory;
   });
 
+  const getCategoryLabel = (id) => {
+    switch (id) {
+      case 'all': return t('fleet.allBikes', 'All Bikes');
+      case 'scooters': return t('fleet.scooters', 'Scooters');
+      case 'commuter': return t('fleet.commuters', 'Commuter Bikes');
+      case 'cruiser': return t('fleet.cruisers', 'Cruiser Bikes');
+      case 'premium': return t('fleet.premium', 'Premium Bikes');
+      default: return id;
+    }
+  };
+
   return (
     <ScrollView
       style={styles.container}
@@ -79,16 +92,16 @@ export default function HomeScreen({
         <View style={styles.heroContainer}>
           <View style={styles.heroTagBadge}>
             <Compass size={13} color="#38BDF8" style={{ marginRight: 6 }} />
-            <Text style={styles.heroTagText}>THEROADEAGLE.COM</Text>
+            <Text style={styles.heroTagText}>{t('hero.badge', 'THEROADEAGLE.COM')}</Text>
           </View>
 
           <Text style={styles.heroTitle}>
-            Your Ride, Your Route,{'\n'}
-            <Text style={styles.heroTitleCyan}>Your Freedom.</Text>
+            {t('hero.titleLine1', 'Your Ride, Your Route,')}{'\n'}
+            <Text style={styles.heroTitleCyan}>{t('hero.titleLine2', 'Your Freedom.')}</Text>
           </Text>
 
           <Text style={styles.heroSubtitle}>
-            Discover the city on two wheels. Find the perfect machine for your journey, from agile urban scooters to highway cruisers and superbikes.
+            {t('hero.subtitle', 'Discover the city on two wheels. Find the perfect machine for your journey, from agile urban scooters to highway cruisers and superbikes.')}
           </Text>
 
           <View style={styles.heroButtons}>
@@ -101,7 +114,7 @@ export default function HomeScreen({
               activeOpacity={0.8}
             >
               <Bike size={17} color="#FFFFFF" />
-              <Text style={styles.btnPrimaryText}>Explore Bikes</Text>
+              <Text style={styles.btnPrimaryText}>{t('hero.exploreBikes', 'Explore Bikes')}</Text>
             </TouchableOpacity>
 
             {/* WhatsApp Enquiry button - luxury styling */}
@@ -111,7 +124,7 @@ export default function HomeScreen({
               activeOpacity={0.8}
             >
               <MessageCircle size={17} color="#10B981" />
-              <Text style={styles.btnWhatsAppDarkText}>WhatsApp Enquiry</Text>
+              <Text style={styles.btnWhatsAppDarkText}>{t('hero.whatsappEnquiry', 'WhatsApp Enquiry')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -125,28 +138,28 @@ export default function HomeScreen({
               <View style={styles.featureIcon}>
                 <Bike size={16} color={COLORS.accentCyan} />
               </View>
-              <Text style={styles.featureTitle}>Multiple Bike Options</Text>
+              <Text style={styles.featureTitle}>{t('hero.feature1', 'Multiple Bike Options')}</Text>
             </View>
 
             <View style={styles.featureItem}>
               <View style={styles.featureIcon}>
                 <Tag size={16} color={COLORS.accentCyan} />
               </View>
-              <Text style={styles.featureTitle}>Transparent Pricing</Text>
+              <Text style={styles.featureTitle}>{t('hero.feature2', 'Transparent Pricing')}</Text>
             </View>
 
             <View style={styles.featureItem}>
               <View style={styles.featureIcon}>
                 <Headphones size={16} color={COLORS.accentCyan} />
               </View>
-              <Text style={styles.featureTitle}>Customer Assistance</Text>
+              <Text style={styles.featureTitle}>{t('hero.feature3', 'Customer Assistance')}</Text>
             </View>
 
             <View style={styles.featureItem}>
               <View style={styles.featureIcon}>
                 <CalendarCheck size={16} color={COLORS.accentCyan} />
               </View>
-              <Text style={styles.featureTitle}>Easy Enquiries</Text>
+              <Text style={styles.featureTitle}>{t('hero.feature4', 'Easy Enquiries')}</Text>
             </View>
           </View>
         </View>
@@ -156,9 +169,13 @@ export default function HomeScreen({
       <View style={styles.philosophySection}>
         <View style={styles.centerContainer}>
           <Text style={styles.philosophyQuote}>
-            "Renting a motorcycle shouldn't feel like a leap of faith. We exist to provide transparent pricing, factory-maintained machines, and complete peace of mind."
+            {isHindi
+              ? '"मोटरसाइकिल किराये पर लेना कोई जोखिम भरा काम नहीं होना चाहिए। हम पारदर्शी मूल्य निर्धारण, फ़ैक्टरी-रखरखाव वाली मशीनें और पूरी मानसिक शांति प्रदान करने के लिए प्रतिबद्ध हैं।"'
+              : '"Renting a motorcycle shouldn\'t feel like a leap of faith. We exist to provide transparent pricing, factory-maintained machines, and complete peace of mind."'}
           </Text>
-          <Text style={styles.philosophyAuthor}>— The Road Eagle Guarantee</Text>
+          <Text style={styles.philosophyAuthor}>
+            {isHindi ? '— The Road Eagle गारंटी' : '— The Road Eagle Guarantee'}
+          </Text>
         </View>
       </View>
 
@@ -167,10 +184,10 @@ export default function HomeScreen({
         <View style={styles.centerContainer}>
           <View style={styles.fleetHeaderRow}>
             <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={styles.sectionPretitle}>CURATED LINEUP</Text>
-              <Text style={styles.sectionTitle}>Featured Motorbikes</Text>
+              <Text style={styles.sectionPretitle}>{t('fleet.pretitle', 'CURATED LINEUP')}</Text>
+              <Text style={styles.sectionTitle}>{t('fleet.title', 'Handpicked Fleet')}</Text>
               <Text style={styles.sectionSubtitle}>
-                Hand-picked machines ready for immediate adventure and daily convenience.
+                {t('fleet.subtitle', 'Hand-picked machines ready for immediate adventure and daily convenience.')}
               </Text>
             </View>
 
@@ -215,7 +232,7 @@ export default function HomeScreen({
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.categoryPillText, isActive && styles.categoryPillTextActive]}>
-                    {cat.label}
+                    {getCategoryLabel(cat.id)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -248,7 +265,9 @@ export default function HomeScreen({
 
               {filteredBikes.length === 0 && (
                 <View style={styles.carouselEmpty}>
-                  <Text style={styles.carouselEmptyText}>No motorbikes found in this category.</Text>
+                  <Text style={styles.carouselEmptyText}>
+                    {isHindi ? 'इस श्रेणी में कोई मोटरसाइकिल उपलब्ध नहीं है।' : 'No motorbikes found in this category.'}
+                  </Text>
                 </View>
               )}
             </ScrollView>
@@ -261,19 +280,21 @@ export default function HomeScreen({
               onPress={() => navigation.navigate('Motorbikes')}
               activeOpacity={0.8}
             >
-              <Text style={styles.viewAllBtnText}>View Complete 50+ Fleet ({filteredBikes.length} available)</Text>
+              <Text style={styles.viewAllBtnText}>
+                {t('fleet.viewAllBtn', `View Complete 50+ Fleet (${filteredBikes.length} available)`)}
+              </Text>
               <ArrowRight size={15} color="#38BDF8" />
             </TouchableOpacity>
           </View>
         </View>
       </View>
 
-      {/* ================= WHY CHOOSE US (Proper 4-Column Grid on Web) ================= */}
+      {/* ================= WHY CHOOSE US ================= */}
       <View style={styles.whySection}>
         <View style={styles.centerContainer}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionPretitle}>WHY THE ROAD EAGLE</Text>
-            <Text style={styles.sectionTitle}>Built for Serious Riders</Text>
+            <Text style={styles.sectionPretitle}>{t('whyUs.title', 'WHY THE ROAD EAGLE')}</Text>
+            <Text style={styles.sectionTitle}>{t('whyUs.title', 'Built for Serious Riders')}</Text>
           </View>
 
           <View style={styles.whyGrid}>
@@ -281,40 +302,32 @@ export default function HomeScreen({
               <View style={styles.whyIconCircle}>
                 <ShieldCheck size={22} color={COLORS.accentCyan} />
               </View>
-              <Text style={styles.whyCardTitle}>24-Point Inspection</Text>
-              <Text style={styles.whyCardDesc}>
-                Every machine undergoes meticulous fluid, brake, and tyre checks before handover.
-              </Text>
+              <Text style={styles.whyCardTitle}>{t('whyUs.feature1Title', 'Affordability')}</Text>
+              <Text style={styles.whyCardDesc}>{t('whyUs.feature1Desc', '...')}</Text>
             </View>
 
             <View style={styles.whyCard}>
               <View style={styles.whyIconCircle}>
                 <Tag size={22} color={COLORS.accentCyan} />
               </View>
-              <Text style={styles.whyCardTitle}>Zero Hidden Fees</Text>
-              <Text style={styles.whyCardDesc}>
-                Clear daily rates with 100% refundable security deposit returned within 24-48 hours.
-              </Text>
+              <Text style={styles.whyCardTitle}>{t('whyUs.feature2Title', 'Unmatched Satisfaction')}</Text>
+              <Text style={styles.whyCardDesc}>{t('whyUs.feature2Desc', '...')}</Text>
             </View>
 
             <View style={styles.whyCard}>
               <View style={styles.whyIconCircle}>
                 <Headphones size={22} color={COLORS.accentCyan} />
               </View>
-              <Text style={styles.whyCardTitle}>24/7 Roadside Assistance</Text>
-              <Text style={styles.whyCardDesc}>
-                Flat tyre? Emergency support? Our rapid breakdown van is always one phone call away.
-              </Text>
+              <Text style={styles.whyCardTitle}>{t('whyUs.feature3Title', 'Mechanical Precision')}</Text>
+              <Text style={styles.whyCardDesc}>{t('whyUs.feature3Desc', '...')}</Text>
             </View>
 
             <View style={styles.whyCard}>
               <View style={styles.whyIconCircle}>
                 <Award size={22} color={COLORS.accentCyan} />
               </View>
-              <Text style={styles.whyCardTitle}>Complimentary Gear</Text>
-              <Text style={styles.whyCardDesc}>
-                Sanitized ISI/DOT certified helmet and phone mounts provided with every booking.
-              </Text>
+              <Text style={styles.whyCardTitle}>{t('whyUs.feature4Title', 'Rider Safety First')}</Text>
+              <Text style={styles.whyCardDesc}>{t('whyUs.feature4Desc', '...')}</Text>
             </View>
           </View>
         </View>
@@ -324,8 +337,8 @@ export default function HomeScreen({
       <View style={styles.reviewsSection}>
         <View style={styles.centerContainer}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionPretitle}>VERIFIED FEEDBACK</Text>
-            <Text style={styles.sectionTitle}>Loved by Riders</Text>
+            <Text style={styles.sectionPretitle}>{isHindi ? 'सत्यापित समीक्षाएं' : 'VERIFIED FEEDBACK'}</Text>
+            <Text style={styles.sectionTitle}>{t('testimonials.title', 'Loved by Riders')}</Text>
           </View>
 
           <ScrollView
@@ -333,23 +346,23 @@ export default function HomeScreen({
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.reviewsScroll}
           >
-            {TESTIMONIALS_DATA.map((t, idx) => (
+            {TESTIMONIALS_DATA.map((item, idx) => (
               <View key={idx} style={[styles.reviewCard, SHADOWS.card]}>
                 <View style={styles.reviewHeader}>
-                  <Image source={{ uri: t.avatar }} style={styles.reviewerAvatar} />
+                  <Image source={{ uri: item.avatar }} style={styles.reviewerAvatar} />
                   <View>
-                    <Text style={styles.reviewerName}>{t.name}</Text>
-                    <Text style={styles.reviewerCity}>{t.city}</Text>
+                    <Text style={styles.reviewerName}>{item.name}</Text>
+                    <Text style={styles.reviewerCity}>{item.city}</Text>
                   </View>
                 </View>
 
                 <View style={styles.reviewStars}>
-                  {[...Array(t.rating)].map((_, i) => (
+                  {[...Array(item.rating)].map((_, i) => (
                     <Star key={i} size={13} color={COLORS.accentCyan} fill={COLORS.accentCyan} />
                   ))}
                 </View>
 
-                <Text style={styles.reviewText}>"{t.review}"</Text>
+                <Text style={styles.reviewText}>"{item.review}"</Text>
               </View>
             ))}
           </ScrollView>
@@ -360,8 +373,8 @@ export default function HomeScreen({
       <View style={styles.faqSection}>
         <View style={styles.centerContainer}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionPretitle}>COMMON QUERIES</Text>
-            <Text style={styles.sectionTitle}>Frequently Asked</Text>
+            <Text style={styles.sectionPretitle}>{isHindi ? 'सामान्य प्रश्न' : 'COMMON QUERIES'}</Text>
+            <Text style={styles.sectionTitle}>{t('faq.title', 'Frequently Asked Questions')}</Text>
           </View>
 
           <View style={styles.faqList}>
@@ -395,13 +408,17 @@ export default function HomeScreen({
         </View>
       </View>
 
-      {/* ================= BOTTOM LUXURY CTA BANNER (Centered & Contained) ================= */}
+      {/* ================= BOTTOM LUXURY CTA BANNER ================= */}
       <View style={styles.ctaBannerSection}>
         <View style={styles.centerContainer}>
           <View style={styles.ctaBanner}>
-            <Text style={styles.ctaBannerTitle}>Ready to Hit the Open Road?</Text>
+            <Text style={styles.ctaBannerTitle}>
+              {isHindi ? 'क्या आप खुली सड़क पर निकलने के लिए तैयार हैं?' : 'Ready to Hit the Open Road?'}
+            </Text>
             <Text style={styles.ctaBannerSubtitle}>
-              Reserve your dream machine today or chat with our team on WhatsApp for instant confirmation.
+              {isHindi
+                ? 'आज ही अपनी मनपसंद बाइक आरक्षित करें या तत्काल पुष्टि के लिए व्हाट्सएप पर हमसे संपर्क करें।'
+                : 'Reserve your dream machine today or chat with our team on WhatsApp for instant confirmation.'}
             </Text>
             <View style={styles.ctaBannerBtns}>
               <TouchableOpacity
@@ -410,7 +427,7 @@ export default function HomeScreen({
                 activeOpacity={0.8}
               >
                 <Bike size={17} color="#FFFFFF" />
-                <Text style={styles.ctaPrimaryBtnText}>Browse Entire Fleet</Text>
+                <Text style={styles.ctaPrimaryBtnText}>{t('whyUs.browseFleetBtn', 'Browse Entire Fleet')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.ctaWhatsAppBtn}
@@ -418,7 +435,7 @@ export default function HomeScreen({
                 activeOpacity={0.8}
               >
                 <MessageCircle size={17} color="#FFFFFF" />
-                <Text style={styles.ctaWhatsAppBtnText}>WhatsApp Concierge</Text>
+                <Text style={styles.ctaWhatsAppBtnText}>{t('hero.whatsappEnquiry', 'WhatsApp Concierge')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -448,113 +465,114 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#050B14',
+    overflow: 'hidden',
   },
   heroBgImage: {
     ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
+    opacity: 0.38,
   },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(7, 14, 27, 0.82)',
+    backgroundColor: 'rgba(5, 11, 20, 0.7)',
   },
   heroContainer: {
-    zIndex: 2,
     width: '100%',
-    maxWidth: 1240,
+    maxWidth: 1100,
     paddingHorizontal: 24,
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    zIndex: 2,
   },
   heroTagBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(2, 132, 199, 0.18)',
+    backgroundColor: 'rgba(2, 132, 199, 0.2)',
     borderWidth: 1,
     borderColor: 'rgba(56, 189, 248, 0.4)',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 5,
     borderRadius: RADIUS.full,
-    marginBottom: 18,
+    marginBottom: 16,
   },
   heroTagText: {
     color: '#38BDF8',
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 1.2,
   },
   heroTitle: {
-    fontSize: 38,
+    fontSize: width < 768 ? 32 : 52,
     fontWeight: '900',
-    color: '#FFFFFF',
-    lineHeight: 46,
-    marginBottom: 14,
-    maxWidth: 680,
+    color: COLORS.textPrimary,
+    lineHeight: width < 768 ? 40 : 60,
+    letterSpacing: -1,
+    marginBottom: 16,
+    textAlign: 'center',
   },
   heroTitleCyan: {
-    color: '#38BDF8',
+    color: COLORS.accentCyan,
   },
   heroSubtitle: {
-    fontSize: 14.5,
-    color: '#94A3B8',
-    lineHeight: 22,
-    marginBottom: 26,
-    maxWidth: 580,
+    fontSize: width < 768 ? 14 : 16,
+    color: COLORS.textSecondary,
+    maxWidth: 620,
+    lineHeight: 24,
+    marginBottom: 28,
+    textAlign: 'center',
   },
   heroButtons: {
     flexDirection: 'row',
-    gap: 14,
     flexWrap: 'wrap',
-    alignItems: 'center',
+    gap: 12,
+    justifyContent: 'center',
   },
   btnPrimary: {
-    backgroundColor: '#0284C7',
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.5)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    backgroundColor: COLORS.primaryBtn,
     paddingHorizontal: 22,
     paddingVertical: 12,
     borderRadius: RADIUS.full,
-    shadowColor: '#0284C7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.4)',
+    shadowColor: COLORS.primaryBtn,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
     shadowRadius: 10,
     elevation: 4,
   },
   btnPrimaryText: {
     color: '#FFFFFF',
+    fontWeight: '800',
     fontSize: 14,
-    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   btnWhatsAppDark: {
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(16, 185, 129, 0.35)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: RADIUS.full,
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   btnWhatsAppDarkText: {
     color: '#34D399',
-    fontSize: 14,
     fontWeight: '700',
+    fontSize: 14,
   },
   featureStrip: {
-    backgroundColor: COLORS.bgCard,
+    backgroundColor: '#0A1222',
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: COLORS.borderCard,
-    paddingVertical: 16,
+    paddingVertical: 18,
+    width: '100%',
   },
   featureStripCenteredWrap: {
     flexDirection: 'row',
@@ -567,78 +585,101 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: COLORS.bgCardAlt,
     paddingHorizontal: 16,
-    paddingVertical: 9,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderRadius: RADIUS.full,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   featureIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: 'rgba(2, 132, 199, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   featureTitle: {
-    color: COLORS.textPrimary,
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#CBD5E1',
+    letterSpacing: 0.2,
   },
   philosophySection: {
-    paddingVertical: 40,
-    alignItems: 'center',
+    paddingVertical: 36,
+    backgroundColor: COLORS.bgDark,
   },
   philosophyQuote: {
-    fontSize: 15,
+    fontSize: width < 768 ? 15 : 18,
     fontStyle: 'italic',
-    color: COLORS.textSecondary,
+    color: '#CBD5E1',
     textAlign: 'center',
-    lineHeight: 25,
-    marginBottom: 10,
-    maxWidth: 720,
+    lineHeight: width < 768 ? 24 : 30,
+    maxWidth: 820,
     alignSelf: 'center',
   },
   philosophyAuthor: {
     fontSize: 12,
+    fontWeight: '800',
     color: '#38BDF8',
-    fontWeight: '700',
-    letterSpacing: 0.8,
     textAlign: 'center',
+    marginTop: 10,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   fleetSection: {
-    marginBottom: 44,
+    paddingVertical: 30,
+    backgroundColor: COLORS.bgDark,
   },
-  sectionHeader: {
-    marginBottom: 24,
+  fleetHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    marginBottom: 20,
   },
   sectionPretitle: {
     fontSize: 11,
     fontWeight: '800',
     color: '#38BDF8',
     letterSpacing: 1.4,
-    marginBottom: 5,
+    marginBottom: 4,
+    textTransform: 'uppercase',
   },
   sectionTitle: {
-    fontSize: 28,
+    fontSize: width < 768 ? 24 : 30,
     fontWeight: '900',
     color: COLORS.textPrimary,
-    marginBottom: 6,
     letterSpacing: -0.5,
+    marginBottom: 4,
   },
   sectionSubtitle: {
-    fontSize: 13.5,
+    fontSize: 13,
     color: COLORS.textSecondary,
-    lineHeight: 20,
+    maxWidth: 520,
+    lineHeight: 19,
+  },
+  carouselArrows: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  carouselArrowBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.bgCardAlt,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   categoryPillsScroll: {
     gap: 8,
-    marginBottom: 22,
+    paddingVertical: 4,
+    marginBottom: 20,
   },
   categoryPill: {
-    backgroundColor: COLORS.bgCardAlt,
+    backgroundColor: COLORS.bgCard,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: RADIUS.full,
@@ -658,47 +699,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
   },
-  fleetHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 18,
-  },
-  carouselArrows: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 4,
-  },
-  carouselArrowBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: RADIUS.full,
-    backgroundColor: COLORS.bgCardAlt,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   carouselWrapper: {
-    marginBottom: 20,
+    width: '100%',
+    marginBottom: 24,
   },
   carouselContent: {
     gap: 16,
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
   carouselCard: {
     width: 290,
-    marginBottom: 0,
   },
   carouselEmpty: {
-    backgroundColor: COLORS.bgCard,
-    borderWidth: 1,
-    borderColor: COLORS.borderCard,
-    borderRadius: RADIUS.lg,
-    padding: 24,
+    padding: 30,
     alignItems: 'center',
-    justifyContent: 'center',
-    width: 280,
+    width: 300,
   },
   carouselEmptyText: {
     color: COLORS.textMuted,
@@ -706,20 +721,19 @@ const styles = StyleSheet.create({
   },
   viewAllBtnWrapper: {
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 6,
   },
   viewAllBtn: {
-    backgroundColor: COLORS.bgCard,
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.4)',
-    borderRadius: RADIUS.full,
-    paddingVertical: 11,
-    paddingHorizontal: 26,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    maxWidth: 420,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+    borderRadius: RADIUS.full,
   },
   viewAllBtnText: {
     color: '#38BDF8',
@@ -727,69 +741,81 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   whySection: {
-    marginBottom: 48,
+    paddingVertical: 44,
+    backgroundColor: '#08101E',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: COLORS.borderCard,
+  },
+  sectionHeader: {
+    marginBottom: 26,
+    alignItems: 'center',
   },
   whyGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 16,
+    justifyContent: 'center',
   },
   whyCard: {
-    flex: 1,
-    minWidth: 240,
     backgroundColor: COLORS.bgCard,
     borderWidth: 1,
     borderColor: COLORS.borderCard,
     borderRadius: RADIUS.lg,
     padding: 22,
+    width: width < 768 ? '100%' : '23%',
+    minWidth: 240,
+    flexGrow: 1,
   },
   whyIconCircle: {
     width: 44,
     height: 44,
-    borderRadius: RADIUS.full,
-    backgroundColor: 'rgba(2, 132, 199, 0.2)',
+    borderRadius: 22,
+    backgroundColor: 'rgba(2, 132, 199, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 14,
   },
   whyCardTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
     color: COLORS.textPrimary,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   whyCardDesc: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: COLORS.textSecondary,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   reviewsSection: {
-    marginBottom: 48,
+    paddingVertical: 44,
+    backgroundColor: COLORS.bgDark,
   },
   reviewsScroll: {
     gap: 16,
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
   reviewCard: {
-    width: 320,
     backgroundColor: COLORS.bgCard,
-    borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.borderCard,
+    borderRadius: RADIUS.lg,
     padding: 20,
+    width: 300,
   },
   reviewHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   reviewerAvatar: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    borderWidth: 1.5,
-    borderColor: '#0284C7',
+    backgroundColor: COLORS.bgCardAlt,
   },
   reviewerName: {
     fontSize: 14,
@@ -797,129 +823,134 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
   reviewerCity: {
-    fontSize: 12,
+    fontSize: 11,
     color: COLORS.textMuted,
   },
   reviewStars: {
     flexDirection: 'row',
-    gap: 2,
+    gap: 3,
     marginBottom: 10,
   },
   reviewText: {
     fontSize: 12.5,
     color: COLORS.textSecondary,
-    lineHeight: 19,
+    lineHeight: 18,
     fontStyle: 'italic',
   },
   faqSection: {
-    marginBottom: 48,
+    paddingVertical: 40,
+    backgroundColor: '#091120',
   },
   faqList: {
-    gap: 12,
+    maxWidth: 820,
+    alignSelf: 'center',
+    width: '100%',
+    gap: 10,
   },
   faqCard: {
     backgroundColor: COLORS.bgCard,
-    borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.borderCard,
-    padding: 18,
+    borderRadius: RADIUS.md,
+    padding: 16,
   },
   faqCardOpen: {
-    borderColor: 'rgba(56, 189, 248, 0.5)',
+    borderColor: 'rgba(56, 189, 248, 0.4)',
+    backgroundColor: '#0F1A2E',
   },
   faqHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   faqQuestion: {
-    fontSize: 14.5,
+    fontSize: 14,
     fontWeight: '700',
     color: COLORS.textPrimary,
     flex: 1,
-    marginRight: 12,
+    paddingRight: 10,
   },
   faqQuestionActive: {
     color: '#38BDF8',
   },
   faqAnswer: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: COLORS.textSecondary,
-    lineHeight: 21,
-    marginTop: 12,
+    lineHeight: 19,
+    marginTop: 10,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-    paddingTop: 12,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
   },
   ctaBannerSection: {
-    marginBottom: 30,
+    paddingVertical: 40,
+    backgroundColor: COLORS.bgDark,
   },
   ctaBanner: {
-    backgroundColor: '#0D1526',
+    backgroundColor: '#0C162A',
     borderWidth: 1,
     borderColor: 'rgba(56, 189, 248, 0.3)',
     borderRadius: RADIUS.xl,
     paddingVertical: 36,
     paddingHorizontal: 28,
     alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 24,
-    elevation: 8,
+    textAlign: 'center',
+    shadowColor: '#0284C7',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 6,
   },
   ctaBannerTitle: {
-    fontSize: 26,
+    fontSize: width < 768 ? 22 : 30,
     fontWeight: '900',
     color: '#FFFFFF',
+    marginBottom: 8,
     textAlign: 'center',
-    marginBottom: 10,
-    letterSpacing: -0.4,
   },
   ctaBannerSubtitle: {
-    fontSize: 14,
+    fontSize: 13.5,
     color: '#94A3B8',
     textAlign: 'center',
-    lineHeight: 21,
+    maxWidth: 580,
+    lineHeight: 20,
     marginBottom: 24,
-    maxWidth: 600,
   },
   ctaBannerBtns: {
     flexDirection: 'row',
-    gap: 14,
     flexWrap: 'wrap',
+    gap: 12,
     justifyContent: 'center',
-    alignItems: 'center',
   },
   ctaPrimaryBtn: {
-    backgroundColor: '#0284C7',
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.5)',
-    borderRadius: RADIUS.full,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 8,
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.4)',
   },
   ctaPrimaryBtnText: {
     color: '#FFFFFF',
     fontSize: 13.5,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   ctaWhatsAppBtn: {
-    backgroundColor: '#10B981', // Professional emerald green
-    borderRadius: RADIUS.full,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 8,
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.4)',
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: RADIUS.full,
   },
   ctaWhatsAppBtnText: {
-    color: '#FFFFFF',
+    color: '#34D399',
     fontSize: 13.5,
     fontWeight: '700',
   },

@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Star, Zap, Fuel, Cog, ArrowRight } from 'lucide-react-native';
 import { COLORS, RADIUS, SHADOWS } from '../theme/colors';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function BikeCard({
   bike,
@@ -17,6 +18,7 @@ export default function BikeCard({
   style,
   compact = false,
 }) {
+  const { t, isHindi } = useLanguage();
   const isLimited = bike.statusBadge === 'LIMITED';
 
   return (
@@ -54,7 +56,9 @@ export default function BikeCard({
             ]}
           >
             <Text style={[styles.statusBadgeText, compact && styles.badgeTextCompact]}>
-              {bike.statusBadge || 'AVAILABLE'}
+              {isLimited
+                ? (isHindi ? 'सीमित' : 'LIMITED')
+                : (isHindi ? 'उपलब्ध' : 'AVAILABLE')}
             </Text>
           </View>
         </View>
@@ -78,21 +82,21 @@ export default function BikeCard({
             {[...Array(5)].map((_, i) => (
               <Star
                 key={i}
-                size={compact ? 12 : 13}
+                size={compact ? 11 : 13}
                 color={COLORS.accentCyan}
                 fill={COLORS.accentCyan}
               />
             ))}
           </View>
-          <Text style={[styles.ratingNumber, compact && styles.ratingNumberCompact]}>
+          <Text style={[styles.ratingText, compact && styles.ratingTextCompact]}>
             {bike.rating}
           </Text>
           <Text style={[styles.reviewCount, compact && styles.reviewCountCompact]}>
-            ({bike.reviewsCount})
+            ({bike.reviews})
           </Text>
         </View>
 
-        {/* Feature Spec Pills */}
+        {/* Technical Specs Tags */}
         <View style={[styles.specsRow, compact && styles.specsRowCompact]}>
           {bike.specs?.displacement ? (
             <View style={[styles.specPill, compact && styles.specPillCompact]}>
@@ -126,14 +130,18 @@ export default function BikeCard({
         <View style={[styles.footerRow, compact && styles.footerRowCompact]}>
           <View style={[styles.priceBlock, compact && styles.priceBlockCompact]}>
             <View style={styles.priceRow}>
-              <Text style={[styles.fromLabel, compact && styles.fromLabelCompact]}>from </Text>
+              <Text style={[styles.fromLabel, compact && styles.fromLabelCompact]}>
+                {t('fleet.from', 'from')}{' '}
+              </Text>
               <Text style={[styles.priceValue, compact && styles.priceValueCompact]}>
                 ₹{bike.pricePerDay.toLocaleString('en-IN')}
               </Text>
-              <Text style={[styles.perDayLabel, compact && styles.perDayLabelCompact]}>/day</Text>
+              <Text style={[styles.perDayLabel, compact && styles.perDayLabelCompact]}>
+                {t('fleet.perDay', '/day')}
+              </Text>
             </View>
             <Text style={[styles.inrSubtext, compact && styles.inrSubtextCompact]}>
-              Deposit ₹{bike.deposit.toLocaleString('en-IN')}
+              {isHindi ? 'डिपॉजिट' : 'Deposit'} ₹{bike.deposit.toLocaleString('en-IN')}
             </Text>
           </View>
 
@@ -149,7 +157,7 @@ export default function BikeCard({
             activeOpacity={0.8}
           >
             <Text style={[styles.bookBtnText, compact && styles.bookBtnTextCompact]}>
-              Book
+              {t('fleet.bookBtn', 'Book')}
             </Text>
             <ArrowRight size={compact ? 12 : 14} color="#FFFFFF" strokeWidth={2.2} />
           </TouchableOpacity>
@@ -163,22 +171,22 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.bgCard,
     borderRadius: RADIUS.lg,
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: COLORS.borderCard,
-    marginBottom: 20,
-    overflow: 'hidden',
+    width: 290,
   },
   cardCompact: {
-    borderRadius: RADIUS.md,
+    width: '100%',
   },
   imageContainer: {
-    height: 180,
     width: '100%',
-    position: 'relative',
+    height: 180,
     backgroundColor: COLORS.bgCardAlt,
+    position: 'relative',
   },
   imageContainerCompact: {
-    height: 140,
+    height: 160,
   },
   bikeImage: {
     width: '100%',
@@ -186,7 +194,7 @@ const styles = StyleSheet.create({
   },
   imageOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(7, 14, 27, 0.15)',
+    backgroundColor: 'rgba(5, 11, 20, 0.25)',
   },
   badgeRow: {
     position: 'absolute',
@@ -198,37 +206,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 2,
   },
-  badgeCompact: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-  },
-  badgeTextCompact: {
-    fontSize: 9,
-  },
   primaryBadge: {
-    backgroundColor: 'rgba(7, 14, 27, 0.85)',
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.6)',
-    borderRadius: RADIUS.full,
-    paddingHorizontal: 9,
+    backgroundColor: 'rgba(2, 132, 199, 0.9)',
+    paddingHorizontal: 8,
     paddingVertical: 3,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.4)',
   },
   primaryBadgeText: {
-    color: '#38BDF8',
+    color: '#FFFFFF',
     fontSize: 9.5,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   statusBadge: {
-    borderRadius: RADIUS.full,
-    paddingHorizontal: 9,
+    paddingHorizontal: 8,
     paddingVertical: 3,
+    borderRadius: RADIUS.sm,
   },
   statusBadgeText: {
-    color: '#050B14',
+    color: '#FFFFFF',
     fontSize: 9.5,
     fontWeight: '800',
     letterSpacing: 0.5,
+  },
+  badgeCompact: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  badgeTextCompact: {
+    fontSize: 8.5,
   },
   content: {
     padding: 16,
@@ -237,21 +245,19 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 2,
   },
   bikeName: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '800',
     color: COLORS.textPrimary,
+    letterSpacing: -0.2,
   },
   bikeNameCompact: {
-    fontSize: 14,
+    fontSize: 14.5,
   },
   bikeModel: {
-    fontSize: 12.5,
+    fontSize: 12,
     color: COLORS.textSecondary,
     marginBottom: 8,
   },
@@ -263,26 +269,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
-    gap: 6,
   },
   ratingRowCompact: {
     marginBottom: 8,
-    gap: 4,
   },
   stars: {
     flexDirection: 'row',
     gap: 2,
+    marginRight: 6,
   },
-  ratingNumber: {
-    fontSize: 12.5,
+  ratingText: {
+    fontSize: 12,
     fontWeight: '700',
     color: COLORS.textPrimary,
+    marginRight: 4,
   },
-  ratingNumberCompact: {
+  ratingTextCompact: {
     fontSize: 11,
   },
   reviewCount: {
-    fontSize: 11.5,
+    fontSize: 11,
     color: COLORS.textMuted,
   },
   reviewCountCompact: {
@@ -290,9 +296,9 @@ const styles = StyleSheet.create({
   },
   specsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 6,
     marginBottom: 14,
-    flexWrap: 'wrap',
   },
   specsRowCompact: {
     gap: 4,
@@ -311,12 +317,11 @@ const styles = StyleSheet.create({
   },
   specPillCompact: {
     paddingHorizontal: 6,
-    paddingVertical: 2,
-    gap: 3,
+    paddingVertical: 3,
   },
   specText: {
+    fontSize: 10.5,
     color: COLORS.textSecondary,
-    fontSize: 11,
     fontWeight: '600',
   },
   specTextCompact: {
@@ -326,78 +331,77 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
     paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderCard,
   },
   footerRowCompact: {
     paddingTop: 8,
   },
-  priceBlock: {},
+  priceBlock: {
+    flex: 1,
+  },
   priceBlockCompact: {},
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 3,
   },
   fromLabel: {
-    fontSize: 11.5,
-    color: COLORS.textSecondary,
+    fontSize: 11,
+    color: COLORS.textMuted,
+    marginRight: 2,
   },
   fromLabelCompact: {
     fontSize: 10,
   },
   priceValue: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '900',
-    color: '#38BDF8', // Luxury high-contrast cyan/sky price
+    color: '#38BDF8',
   },
   priceValueCompact: {
-    fontSize: 16,
+    fontSize: 15,
   },
   perDayLabel: {
     fontSize: 11,
     color: COLORS.textMuted,
+    marginLeft: 1,
   },
   perDayLabelCompact: {
-    fontSize: 9.5,
+    fontSize: 10,
   },
   inrSubtext: {
-    fontSize: 10.5,
+    fontSize: 10,
     color: COLORS.textMuted,
     marginTop: 1,
   },
   inrSubtextCompact: {
-    fontSize: 9.5,
-    marginTop: 1,
+    fontSize: 9,
   },
-  // Sober, elegant sapphire blue gradient button (no neon bright red)
   bookBtn: {
-    backgroundColor: '#0284C7',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    gap: 5,
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: RADIUS.full,
     borderWidth: 1,
     borderColor: 'rgba(56, 189, 248, 0.4)',
     shadowColor: '#0284C7',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 3,
   },
   bookBtnCompact: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    gap: 4,
   },
   bookBtnText: {
     color: '#FFFFFF',
     fontSize: 12.5,
     fontWeight: '700',
-    letterSpacing: 0.3,
   },
   bookBtnTextCompact: {
     fontSize: 11.5,

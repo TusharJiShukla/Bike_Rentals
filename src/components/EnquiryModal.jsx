@@ -12,9 +12,21 @@ import {
   Platform,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { X, Send, CheckCircle2, ShieldCheck, Calendar, Phone, User, MessageSquare, Clock, Check } from 'lucide-react-native';
+import {
+  X,
+  Send,
+  CheckCircle2,
+  ShieldCheck,
+  Calendar,
+  Phone,
+  User,
+  MessageSquare,
+  Check,
+} from 'lucide-react-native';
 import { BIKES_DATA } from '../data/bikes';
 import { COLORS, RADIUS, SHADOWS } from '../theme/colors';
+import { useLanguage } from '../i18n/LanguageContext';
+import CalendarPickerModal from './CalendarPickerModal';
 
 function WhatsAppSvgIcon({ size = 20, color = '#FFFFFF' }) {
   return (
@@ -30,6 +42,8 @@ export default function EnquiryModal({
   selectedBike,
   onShowToast,
 }) {
+  const { t, isHindi } = useLanguage();
+
   const [bikeId, setBikeId] = useState(selectedBike?.id || BIKES_DATA[0].id);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -37,6 +51,9 @@ export default function EnquiryModal({
   const [endDate, setEndDate] = useState('');
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
+
+  // Calendar picker state
+  const [calendarTarget, setCalendarTarget] = useState(null); // 'start' | 'end' | null
 
   useEffect(() => {
     if (selectedBike) {
@@ -52,6 +69,7 @@ export default function EnquiryModal({
       setEndDate('');
       setMessage('');
       setSubmitted(false);
+      setCalendarTarget(null);
     }
   }, [visible]);
 
@@ -66,14 +84,18 @@ export default function EnquiryModal({
       (message ? `Note: ${message}` : '')
     );
     Linking.openURL(`https://wa.me/919876543210?text=${text}`).catch(() => {});
-    if (onShowToast) onShowToast(`Opening WhatsApp concierge for ${currentBike.name}!`);
+    if (onShowToast) onShowToast(isHindi ? `${currentBike.name} के लिए व्हाट्सएप खुल रहा है!` : `Opening WhatsApp concierge for ${currentBike.name}!`);
     onClose();
   };
 
   const handleSubmit = () => {
     setSubmitted(true);
     if (onShowToast) {
-      onShowToast(`Enquiry received for ${currentBike.name}! Our concierge will connect with you shortly.`);
+      onShowToast(
+        isHindi
+          ? `${currentBike.name} के लिए पूछताछ प्राप्त हुई! हमारी टीम जल्द ही आपसे संपर्क करेगी।`
+          : `Enquiry received for ${currentBike.name}! Our concierge will connect with you shortly.`
+      );
     }
     setTimeout(() => {
       setSubmitted(false);
@@ -82,211 +104,271 @@ export default function EnquiryModal({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <View style={styles.overlay}>
-        <TouchableWithoutFeedback onPress={onClose}>
-          <View style={styles.backdrop} />
-        </TouchableWithoutFeedback>
+    <>
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={onClose}
+      >
+        <View style={styles.overlay}>
+          <TouchableWithoutFeedback onPress={onClose}>
+            <View style={styles.backdrop} />
+          </TouchableWithoutFeedback>
 
-        <View style={[styles.modalCard, SHADOWS.card]}>
-          {/* Close Button */}
-          <TouchableOpacity
-            style={styles.closeBtn}
-            onPress={onClose}
-            activeOpacity={0.7}
-            accessibilityLabel="Close"
-          >
-            <X size={18} color="#94A3B8" />
-          </TouchableOpacity>
+          <View style={[styles.modalCard, SHADOWS.card]}>
+            {/* Close Button */}
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={onClose}
+              activeOpacity={0.7}
+              accessibilityLabel="Close"
+            >
+              <X size={18} color="#94A3B8" />
+            </TouchableOpacity>
 
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-          >
-            {/* Header with WhatsApp Luxury Pill */}
-            <View style={styles.header}>
-              <View style={styles.waIconCircle}>
-                <WhatsAppSvgIcon size={26} color="#FFFFFF" />
-              </View>
-              <Text style={styles.title}>WhatsApp Concierge</Text>
-              <Text style={styles.subtitle}>
-                Direct instant assistance & custom rental quotes with our team
-              </Text>
-              <View style={styles.supportBadge}>
-                <View style={styles.pulseDot} />
-                <Text style={styles.supportBadgeText}>+91 98765 43210 • 24/7 Verified Support</Text>
-              </View>
-            </View>
-
-            {submitted ? (
-              <View style={styles.submittedWrap}>
-                <View style={styles.checkCircle}>
-                  <CheckCircle2 size={40} color="#10B981" />
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+            >
+              {/* Header with WhatsApp Luxury Pill */}
+              <View style={styles.header}>
+                <View style={styles.waIconCircle}>
+                  <WhatsAppSvgIcon size={26} color="#FFFFFF" />
                 </View>
-                <Text style={styles.submittedTitle}>Enquiry Submitted!</Text>
-                <Text style={styles.submittedSubtitle}>
-                  We have received your enquiry for <Text style={{ fontWeight: '800', color: '#FFFFFF' }}>{currentBike.name}</Text>. Our concierge will message or call you shortly.
+                <Text style={styles.title}>
+                  {t('enquiry.conciergeTitle', 'WhatsApp Concierge')}
                 </Text>
+                <Text style={styles.subtitle}>
+                  {t('enquiry.conciergeSubtitle', 'Direct instant assistance & custom rental quotes with our team')}
+                </Text>
+                <View style={styles.supportBadge}>
+                  <View style={styles.pulseDot} />
+                  <Text style={styles.supportBadgeText}>
+                    {t('enquiry.verifiedSupport', '+91 98765 43210 • 24/7 Verified Support')}
+                  </Text>
+                </View>
               </View>
-            ) : (
-              <View style={styles.form}>
-                {/* Machine Selector Section */}
-                <View style={styles.sectionWrap}>
-                  <View style={styles.sectionHeaderRow}>
-                    <Text style={styles.sectionLabel}>CHOOSE MOTORCYCLE</Text>
-                    <Text style={styles.sectionHint}>Selected: {currentBike.name}</Text>
+
+              {submitted ? (
+                <View style={styles.submittedWrap}>
+                  <View style={styles.checkCircle}>
+                    <CheckCircle2 size={40} color="#10B981" />
                   </View>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.bikeChipsContent}
-                  >
-                    {BIKES_DATA.map((b) => {
-                      const active = b.id === bikeId;
-                      return (
+                  <Text style={styles.submittedTitle}>
+                    {t('enquiry.submittedTitle', 'Enquiry Submitted!')}
+                  </Text>
+                  <Text style={styles.submittedSubtitle}>
+                    {t('enquiry.submittedSub', 'We have received your enquiry for')} <Text style={{ fontWeight: '800', color: '#FFFFFF' }}>{currentBike.name}</Text>.
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.form}>
+                  {/* Machine Selector Section */}
+                  <View style={styles.sectionWrap}>
+                    <View style={styles.sectionHeaderRow}>
+                      <Text style={styles.sectionLabel}>
+                        {t('enquiry.chooseMotorcycle', 'CHOOSE MOTORCYCLE')}
+                      </Text>
+                      <Text style={styles.sectionHint}>
+                        {t('enquiry.selected', 'Selected')}: {currentBike.name}
+                      </Text>
+                    </View>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.bikeChipsContent}
+                    >
+                      {BIKES_DATA.map((b) => {
+                        const active = b.id === bikeId;
+                        return (
+                          <TouchableOpacity
+                            key={b.id}
+                            style={[styles.bikeChip, active && styles.bikeChipActive]}
+                            onPress={() => setBikeId(b.id)}
+                            activeOpacity={0.8}
+                          >
+                            <View style={styles.chipTopRow}>
+                              {active && <Check size={12} color="#10B981" style={{ marginRight: 4 }} />}
+                              <Text style={[styles.bikeChipText, active && styles.bikeChipTextActive]}>
+                                {b.name}
+                              </Text>
+                            </View>
+                            <Text style={[styles.bikeChipPrice, active && styles.bikeChipPriceActive]}>
+                              ₹{b.pricePerDay.toLocaleString()}/day
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+
+                  {/* Rider Inputs with Clean Placeholders Only */}
+                  <View style={styles.inputsGrid}>
+                    <View style={styles.inputGroup}>
+                      <View style={styles.labelRow}>
+                        <User size={13} color="#94A3B8" />
+                        <Text style={styles.label}>
+                          {t('enquiry.fullName', 'FULL NAME')}
+                        </Text>
+                      </View>
+                      <TextInput
+                        style={styles.input}
+                        placeholder={t('enquiry.fullNamePlaceholder', 'Enter your full name')}
+                        placeholderTextColor="#475569"
+                        value={fullName}
+                        onChangeText={setFullName}
+                      />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <View style={styles.labelRow}>
+                        <Phone size={13} color="#94A3B8" />
+                        <Text style={styles.label}>
+                          {t('enquiry.phone', 'WHATSAPP PHONE NUMBER')}
+                        </Text>
+                      </View>
+                      <TextInput
+                        style={styles.input}
+                        placeholder={t('enquiry.phonePlaceholder', 'e.g. 9876543210')}
+                        placeholderTextColor="#475569"
+                        keyboardType="phone-pad"
+                        value={phone}
+                        onChangeText={setPhone}
+                        maxLength={15}
+                      />
+                    </View>
+
+                    {/* Dates Row - Interactive Calendar Picker */}
+                    <View style={styles.datesRow}>
+                      <View style={[styles.inputGroup, { flex: 1 }]}>
+                        <View style={styles.labelRow}>
+                          <Calendar size={13} color="#94A3B8" />
+                          <Text style={styles.label}>
+                            {t('enquiry.startDate', 'START DATE')}
+                          </Text>
+                        </View>
                         <TouchableOpacity
-                          key={b.id}
-                          style={[styles.bikeChip, active && styles.bikeChipActive]}
-                          onPress={() => setBikeId(b.id)}
+                          style={styles.datePickerBtn}
+                          onPress={() => setCalendarTarget('start')}
                           activeOpacity={0.8}
                         >
-                          <View style={styles.chipTopRow}>
-                            {active && <Check size={12} color="#10B981" style={{ marginRight: 4 }} />}
-                            <Text style={[styles.bikeChipText, active && styles.bikeChipTextActive]}>
-                              {b.name}
-                            </Text>
-                          </View>
-                          <Text style={[styles.bikeChipPrice, active && styles.bikeChipPriceActive]}>
-                            ₹{b.pricePerDay.toLocaleString()}/day
+                          <Text
+                            style={startDate ? styles.datePickerValueText : styles.datePickerPlaceholderText}
+                            numberOfLines={1}
+                          >
+                            {startDate || 'YYYY-MM-DD'}
                           </Text>
+                          <Calendar size={15} color="#38BDF8" />
                         </TouchableOpacity>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
+                      </View>
 
-                {/* Rider Inputs with Clean Placeholders Only */}
-                <View style={styles.inputsGrid}>
-                  <View style={styles.inputGroup}>
-                    <View style={styles.labelRow}>
-                      <User size={13} color="#94A3B8" />
-                      <Text style={styles.label}>FULL NAME</Text>
+                      <View style={[styles.inputGroup, { flex: 1 }]}>
+                        <View style={styles.labelRow}>
+                          <Calendar size={13} color="#94A3B8" />
+                          <Text style={styles.label}>
+                            {t('enquiry.endDate', 'RETURN DATE')}
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.datePickerBtn}
+                          onPress={() => setCalendarTarget('end')}
+                          activeOpacity={0.8}
+                        >
+                          <Text
+                            style={endDate ? styles.datePickerValueText : styles.datePickerPlaceholderText}
+                            numberOfLines={1}
+                          >
+                            {endDate || 'YYYY-MM-DD'}
+                          </Text>
+                          <Calendar size={15} color="#38BDF8" />
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Enter your full name"
-                      placeholderTextColor="#475569"
-                      value={fullName}
-                      onChangeText={setFullName}
-                    />
-                  </View>
 
-                  <View style={styles.inputGroup}>
-                    <View style={styles.labelRow}>
-                      <Phone size={13} color="#94A3B8" />
-                      <Text style={styles.label}>WHATSAPP PHONE NUMBER</Text>
-                    </View>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="e.g. 9876543210"
-                      placeholderTextColor="#475569"
-                      keyboardType="phone-pad"
-                      value={phone}
-                      onChangeText={setPhone}
-                      maxLength={15}
-                    />
-                  </View>
-
-                  {/* Dates Row - 2 Columns */}
-                  <View style={styles.datesRow}>
-                    <View style={[styles.inputGroup, { flex: 1 }]}>
+                    {/* Message Field */}
+                    <View style={styles.inputGroup}>
                       <View style={styles.labelRow}>
-                        <Calendar size={13} color="#94A3B8" />
-                        <Text style={styles.label}>START DATE</Text>
+                        <MessageSquare size={13} color="#94A3B8" />
+                        <Text style={styles.label}>
+                          {t('enquiry.specialReq', 'SPECIAL REQUIREMENTS (OPTIONAL)')}
+                        </Text>
                       </View>
                       <TextInput
-                        style={styles.input}
-                        placeholder="DD/MM/YYYY"
+                        style={[styles.input, styles.textArea]}
+                        placeholder={t('enquiry.specialReqPlaceholder', 'Need extra helmet, doorstep delivery, or custom touring advice...')}
                         placeholderTextColor="#475569"
-                        value={startDate}
-                        onChangeText={setStartDate}
-                      />
-                    </View>
-
-                    <View style={[styles.inputGroup, { flex: 1 }]}>
-                      <View style={styles.labelRow}>
-                        <Calendar size={13} color="#94A3B8" />
-                        <Text style={styles.label}>RETURN DATE</Text>
-                      </View>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="DD/MM/YYYY"
-                        placeholderTextColor="#475569"
-                        value={endDate}
-                        onChangeText={setEndDate}
+                        multiline
+                        numberOfLines={3}
+                        value={message}
+                        onChangeText={setMessage}
                       />
                     </View>
                   </View>
 
-                  {/* Message Field */}
-                  <View style={styles.inputGroup}>
-                    <View style={styles.labelRow}>
-                      <MessageSquare size={13} color="#94A3B8" />
-                      <Text style={styles.label}>SPECIAL REQUIREMENTS (OPTIONAL)</Text>
+                  {/* Actions Container - Properly Sized Buttons */}
+                  <View style={styles.actionContainer}>
+                    {/* WhatsApp Primary CTA Button - Refined Luxury Green */}
+                    <TouchableOpacity
+                      style={styles.whatsAppBtn}
+                      onPress={handleWhatsAppRedirect}
+                      activeOpacity={0.85}
+                    >
+                      <WhatsAppSvgIcon size={19} color="#FFFFFF" />
+                      <Text style={styles.whatsAppBtnText}>
+                        {t('enquiry.sendWhatsApp', 'Send Enquiry on WhatsApp')}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {/* Secondary Direct Submit Button - Elegant Understated Outline */}
+                    <TouchableOpacity
+                      style={styles.submitBtn}
+                      onPress={handleSubmit}
+                      activeOpacity={0.8}
+                    >
+                      <Send size={14} color="#38BDF8" />
+                      <Text style={styles.submitBtnText}>
+                        {t('enquiry.requestCallback', 'Request Callback Instead')}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {/* Trust Badge */}
+                    <View style={styles.trustFooter}>
+                      <ShieldCheck size={13} color="#10B981" />
+                      <Text style={styles.trustText}>
+                        {t('enquiry.trustFooter', 'Instant response • Zero spam • Verified Road Eagle fleet')}
+                      </Text>
                     </View>
-                    <TextInput
-                      style={[styles.input, styles.textArea]}
-                      placeholder="Need extra helmet, doorstep delivery, or custom touring advice..."
-                      placeholderTextColor="#475569"
-                      multiline
-                      numberOfLines={3}
-                      value={message}
-                      onChangeText={setMessage}
-                    />
                   </View>
                 </View>
-
-                {/* Actions Container - Properly Sized Buttons */}
-                <View style={styles.actionContainer}>
-                  {/* WhatsApp Primary CTA Button - Refined Luxury Green */}
-                  <TouchableOpacity
-                    style={styles.whatsAppBtn}
-                    onPress={handleWhatsAppRedirect}
-                    activeOpacity={0.85}
-                  >
-                    <WhatsAppSvgIcon size={19} color="#FFFFFF" />
-                    <Text style={styles.whatsAppBtnText}>Send Enquiry on WhatsApp</Text>
-                  </TouchableOpacity>
-
-                  {/* Secondary Direct Submit Button - Elegant Understated Outline */}
-                  <TouchableOpacity
-                    style={styles.submitBtn}
-                    onPress={handleSubmit}
-                    activeOpacity={0.8}
-                  >
-                    <Send size={14} color="#38BDF8" />
-                    <Text style={styles.submitBtnText}>Request Callback Instead</Text>
-                  </TouchableOpacity>
-
-                  {/* Trust Badge */}
-                  <View style={styles.trustFooter}>
-                    <ShieldCheck size={13} color="#10B981" />
-                    <Text style={styles.trustText}>
-                      Instant response • Zero spam • Verified Road Eagle fleet
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            )}
-          </ScrollView>
+              )}
+            </ScrollView>
+          </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+
+      {/* Calendar Picker Modal */}
+      <CalendarPickerModal
+        visible={calendarTarget !== null}
+        onClose={() => setCalendarTarget(null)}
+        initialDate={calendarTarget === 'start' ? startDate : endDate}
+        minDate={calendarTarget === 'end' && startDate ? startDate : undefined}
+        title={
+          calendarTarget === 'start'
+            ? t('calendar.selectPickupDate', 'Select Pickup Date')
+            : t('calendar.selectReturnDate', 'Select Return Date')
+        }
+        onSelectDate={(dateStr) => {
+          if (calendarTarget === 'start') {
+            setStartDate(dateStr);
+            if (endDate && endDate < dateStr) setEndDate('');
+          } else {
+            setEndDate(dateStr);
+          }
+          setCalendarTarget(null);
+        }}
+      />
+    </>
   );
 }
 
@@ -482,6 +564,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 42,
     color: '#FFFFFF',
+    fontSize: 13,
+  },
+  datePickerBtn: {
+    backgroundColor: '#111A2E',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.09)',
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 12,
+    height: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  datePickerValueText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  datePickerPlaceholderText: {
+    color: '#475569',
     fontSize: 13,
   },
   textArea: {

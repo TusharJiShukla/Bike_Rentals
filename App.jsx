@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 
+import { LanguageProvider } from './src/i18n/LanguageContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import BookDropdownModal from './src/components/BookDropdownModal';
 import EnquiryModal from './src/components/EnquiryModal';
@@ -99,62 +100,64 @@ export default function App() {
   };
 
   return (
-    <SafeAreaProvider style={styles.root}>
-      <StatusBar style="light" backgroundColor={COLORS.bgDark} />
-      <NavigationContainer ref={navigationRef}>
-        <View style={styles.appContainer}>
-          <RootNavigator
-            user={user}
-            onOpenAuth={() => setIsAuthOpen(true)}
-            onOpenWhatsApp={handleOpenWhatsApp}
-            onOpenQuote={handleOpenQuote}
-            onSelectBike={handleSelectBike}
-            onStartBooking={handleStartBooking}
-            onOpenBookModal={handleOpenBookModal}
-            onShowToast={showToast}
-          />
+    <LanguageProvider>
+      <SafeAreaProvider style={styles.root}>
+        <StatusBar style="light" backgroundColor={COLORS.bgDark} />
+        <NavigationContainer ref={navigationRef}>
+          <View style={styles.appContainer}>
+            <RootNavigator
+              user={user}
+              onOpenAuth={() => setIsAuthOpen(true)}
+              onOpenWhatsApp={handleOpenWhatsApp}
+              onOpenQuote={handleOpenQuote}
+              onSelectBike={handleSelectBike}
+              onStartBooking={handleStartBooking}
+              onOpenBookModal={handleOpenBookModal}
+              onShowToast={showToast}
+            />
 
-          {/* Floating WhatsApp Quick Action Button */}
-          <FloatingWhatsApp
-            onPress={() => handleOpenWhatsApp()}
-            phone="919876543210"
-          />
+            {/* Floating WhatsApp Quick Action Button */}
+            <FloatingWhatsApp
+              onPress={() => handleOpenWhatsApp()}
+              phone="919876543210"
+            />
 
-          {/* Action Modals */}
-          <BookDropdownModal
-            visible={isBookModalOpen}
-            onClose={() => setIsBookModalOpen(false)}
-            bike={bookModalBike}
-            onStartBooking={handleStartBooking}
-            onShowToast={showToast}
-          />
+            {/* Action Modals */}
+            <BookDropdownModal
+              visible={isBookModalOpen}
+              onClose={() => setIsBookModalOpen(false)}
+              bike={bookModalBike}
+              onStartBooking={handleStartBooking}
+              onShowToast={showToast}
+            />
 
-          <EnquiryModal
-            visible={isEnquiryOpen}
-            onClose={() => setIsEnquiryOpen(false)}
-            selectedBike={enquiryBike}
-            onShowToast={showToast}
-          />
+            <EnquiryModal
+              visible={isEnquiryOpen}
+              onClose={() => setIsEnquiryOpen(false)}
+              selectedBike={enquiryBike}
+              onShowToast={showToast}
+            />
 
-          <AuthModal
-            visible={isAuthOpen}
-            onClose={() => setIsAuthOpen(false)}
-            onLogin={handleUserUpdate}
-            user={user}
-          />
+            <AuthModal
+              visible={isAuthOpen}
+              onClose={() => setIsAuthOpen(false)}
+              onLogin={handleUserUpdate}
+              user={user}
+            />
 
-          <QuoteModal
-            visible={isQuoteOpen}
-            onClose={() => setIsQuoteOpen(false)}
-            bookingData={quoteData}
-            bike={selectedBike}
-          />
+            <QuoteModal
+              visible={isQuoteOpen}
+              onClose={() => setIsQuoteOpen(false)}
+              bookingData={quoteData}
+              bike={selectedBike}
+            />
 
-          {/* Floating Toast Notification Layer */}
-          <Toast toasts={toasts} />
-        </View>
-      </NavigationContainer>
-    </SafeAreaProvider>
+            {/* Floating Toast Notification Layer */}
+            <Toast toasts={toasts} />
+          </View>
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </LanguageProvider>
   );
 }
 
