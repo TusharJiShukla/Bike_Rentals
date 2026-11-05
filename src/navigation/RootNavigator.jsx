@@ -52,8 +52,8 @@ function BottomTabNavigator({
           backgroundColor: COLORS.bgDark,
           borderTopColor: COLORS.borderCard,
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 86 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+          height: Platform.OS === 'ios' ? 88 : 74,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 14,
           paddingTop: 8,
         },
         tabBarActiveTintColor: COLORS.accentCyan,
@@ -61,6 +61,7 @@ function BottomTabNavigator({
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '700',
+          marginBottom: 2,
         },
       })}
     >

@@ -66,6 +66,7 @@ export default function BookingScreen({
 
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
+  const isMobile = width < 768;
 
   // Form input dates initialized EMPTY - user picks from calendar or types
   const [pickupDate, setPickupDate] = useState('');
@@ -295,7 +296,7 @@ export default function BookingScreen({
                   {/* 2x2 Form Inputs Grid */}
                   <View style={styles.formGrid}>
                     {/* Row 1: Pickup Date & Time */}
-                    <View style={styles.formRow}>
+                    <View style={[styles.formRow, isMobile && { flexDirection: 'column', gap: 12 }]}>
                       <View style={styles.formFieldCol}>
                         <View style={styles.fieldLabelRow}>
                           <Calendar size={13} color="#94A3B8" />
@@ -341,7 +342,7 @@ export default function BookingScreen({
                     </View>
 
                     {/* Row 2: Return Date & Time */}
-                    <View style={styles.formRow}>
+                    <View style={[styles.formRow, isMobile && { flexDirection: 'column', gap: 12 }]}>
                       <View style={styles.formFieldCol}>
                         <View style={styles.fieldLabelRow}>
                           <Calendar size={13} color="#94A3B8" />
@@ -481,9 +482,9 @@ export default function BookingScreen({
                   </View>
 
                   {/* Phone Number and Email Row */}
-                  <View style={styles.step2Row}>
+                  <View style={[styles.step2Row, isMobile && { flexDirection: 'column', gap: 14 }]}>
                     {/* Unified PhoneInput with Country Code + 10-Digit Validation */}
-                    <View style={{ flex: 1.1 }}>
+                    <View style={isMobile ? { width: '100%' } : { flex: 1.1 }}>
                       <View style={styles.fieldLabelRow}>
                         <Phone size={13} color="#94A3B8" />
                         <Text style={styles.step2Label}>
@@ -507,7 +508,7 @@ export default function BookingScreen({
                     </View>
 
                     {/* Email Input with @ and domain validation */}
-                    <View style={{ flex: 1.2 }}>
+                    <View style={isMobile ? { width: '100%' } : { flex: 1.2 }}>
                       <View style={styles.fieldLabelRow}>
                         <Mail size={13} color="#94A3B8" />
                         <Text style={styles.step2Label}>
@@ -565,17 +566,18 @@ export default function BookingScreen({
                     <Text style={styles.step2Label}>
                       {t('booking.paymentMethod', 'SELECT PAYMENT METHOD')}
                     </Text>
-                    <View style={styles.paymentMethodsRow}>
+                    <View style={[styles.paymentMethodsRow, isMobile && { gap: 6 }]}>
                       <TouchableOpacity
                         style={[
                           styles.paymentMethodCard,
+                          isMobile && { paddingVertical: 10, paddingHorizontal: 4 },
                           paymentMethod === 'upi' && styles.paymentMethodCardActive,
                         ]}
                         onPress={() => setPaymentMethod('upi')}
                         activeOpacity={0.8}
                       >
-                        <Smartphone size={18} color={paymentMethod === 'upi' ? '#38BDF8' : '#94A3B8'} />
-                        <Text style={[styles.paymentMethodText, paymentMethod === 'upi' && styles.paymentMethodTextActive]}>
+                        <Smartphone size={17} color={paymentMethod === 'upi' ? '#38BDF8' : '#94A3B8'} />
+                        <Text style={[styles.paymentMethodText, isMobile && { fontSize: 10.5, textAlign: 'center' }, paymentMethod === 'upi' && styles.paymentMethodTextActive]}>
                           {t('booking.upi', 'UPI / QR')}
                         </Text>
                       </TouchableOpacity>
@@ -583,27 +585,29 @@ export default function BookingScreen({
                       <TouchableOpacity
                         style={[
                           styles.paymentMethodCard,
+                          isMobile && { paddingVertical: 10, paddingHorizontal: 4 },
                           paymentMethod === 'card' && styles.paymentMethodCardActive,
                         ]}
                         onPress={() => setPaymentMethod('card')}
                         activeOpacity={0.8}
                       >
-                        <CreditCard size={18} color={paymentMethod === 'card' ? '#38BDF8' : '#94A3B8'} />
-                        <Text style={[styles.paymentMethodText, paymentMethod === 'card' && styles.paymentMethodTextActive]}>
-                          {t('booking.card', 'Credit / Debit')}
+                        <CreditCard size={17} color={paymentMethod === 'card' ? '#38BDF8' : '#94A3B8'} />
+                        <Text style={[styles.paymentMethodText, isMobile && { fontSize: 10.5, textAlign: 'center' }, paymentMethod === 'card' && styles.paymentMethodTextActive]}>
+                          {t('booking.card', 'Card')}
                         </Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
                         style={[
                           styles.paymentMethodCard,
+                          isMobile && { paddingVertical: 10, paddingHorizontal: 4 },
                           paymentMethod === 'pickup' && styles.paymentMethodCardActive,
                         ]}
                         onPress={() => setPaymentMethod('pickup')}
                         activeOpacity={0.8}
                       >
-                        <ShieldCheck size={18} color={paymentMethod === 'pickup' ? '#38BDF8' : '#94A3B8'} />
-                        <Text style={[styles.paymentMethodText, paymentMethod === 'pickup' && styles.paymentMethodTextActive]}>
+                        <ShieldCheck size={17} color={paymentMethod === 'pickup' ? '#38BDF8' : '#94A3B8'} />
+                        <Text style={[styles.paymentMethodText, isMobile && { fontSize: 10.5, textAlign: 'center' }, paymentMethod === 'pickup' && styles.paymentMethodTextActive]}>
                           {t('booking.cash', 'Pay at Hub')}
                         </Text>
                       </TouchableOpacity>
@@ -611,9 +615,9 @@ export default function BookingScreen({
                   </View>
 
                   {/* Step 2 Action Buttons */}
-                  <View style={styles.step2Actions}>
+                  <View style={[styles.step2Actions, isMobile && { flexDirection: 'column-reverse', gap: 10 }]}>
                     <TouchableOpacity
-                      style={styles.backBtn}
+                      style={[styles.backBtn, isMobile && { width: '100%', justifyContent: 'center' }]}
                       onPress={() => setStep(1)}
                       activeOpacity={0.8}
                     >
@@ -624,7 +628,7 @@ export default function BookingScreen({
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={styles.confirmBtn}
+                      style={[styles.confirmBtn, isMobile && { width: '100%', justifyContent: 'center' }]}
                       onPress={handleProceedPayment}
                       disabled={isProcessing}
                       activeOpacity={0.85}

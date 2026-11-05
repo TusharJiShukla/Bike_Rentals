@@ -28,6 +28,7 @@ import { BIKES_DATA, CATEGORIES_DATA, FAQS_DATA, TESTIMONIALS_DATA } from '../da
 import { IMAGES } from '../assets/images';
 import { COLORS, RADIUS, SHADOWS } from '../theme/colors';
 import BikeCard from '../components/BikeCard';
+import WhatsAppIcon from '../components/WhatsAppIcon';
 import { useLanguage } from '../i18n/LanguageContext';
 
 const { width } = Dimensions.get('window');
@@ -117,13 +118,13 @@ export default function HomeScreen({
               <Text style={styles.btnPrimaryText}>{t('hero.exploreBikes', 'Explore Bikes')}</Text>
             </TouchableOpacity>
 
-            {/* WhatsApp Enquiry button - luxury styling */}
+            {/* WhatsApp Enquiry button - luxury styling with authentic WhatsApp icon */}
             <TouchableOpacity
               style={styles.btnWhatsAppDark}
               onPress={onOpenWhatsApp}
               activeOpacity={0.8}
             >
-              <MessageCircle size={17} color="#10B981" />
+              <WhatsAppIcon size={18} color="#25D366" />
               <Text style={styles.btnWhatsAppDarkText}>{t('hero.whatsappEnquiry', 'WhatsApp Enquiry')}</Text>
             </TouchableOpacity>
           </View>
@@ -434,7 +435,7 @@ export default function HomeScreen({
                 onPress={onOpenWhatsApp}
                 activeOpacity={0.8}
               >
-                <MessageCircle size={17} color="#FFFFFF" />
+                <WhatsAppIcon size={18} color="#FFFFFF" />
                 <Text style={styles.ctaWhatsAppBtnText}>{t('hero.whatsappEnquiry', 'WhatsApp Concierge')}</Text>
               </TouchableOpacity>
             </View>

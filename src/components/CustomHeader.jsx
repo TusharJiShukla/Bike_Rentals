@@ -16,8 +16,10 @@ export default function CustomHeader({
   const { language, toggleLanguage, t, isHindi } = useLanguage();
   const { width } = useWindowDimensions();
 
-  // Responsive: remove/hide the brand name in mobile view (< 600px)
-  const showBrandName = width >= 600;
+  // Responsive: remove/hide the brand name in mobile view (< 768px)
+  const isMobile = width < 768;
+  const showBrandName = !isMobile;
+  const isVerySmall = width < 420;
 
   const handleBookPress = () => {
     // Requirement: In navbar, clicking the booking button directly opens the Fleet (Motorbikes) page!
@@ -26,9 +28,15 @@ export default function CustomHeader({
     }
   };
 
+  const getUserDisplayName = () => {
+    if (!user) return t('nav.login', 'Log In');
+    const first = (user.name || '').split(' ')[0] || 'User';
+    return isVerySmall ? first.slice(0, 5) : first.length > 8 ? `${first.slice(0, 7)}…` : first;
+  };
+
   return (
     <View style={styles.headerWrapper}>
-      <View style={[styles.headerContainer, width < 600 && styles.headerContainerMobile]}>
+      <View style={[styles.headerContainer, isMobile && styles.headerContainerMobile]}>
         <View style={styles.headerLeft}>
           {showBack ? (
             <TouchableOpacity
@@ -60,10 +68,10 @@ export default function CustomHeader({
           )}
         </View>
 
-        <View style={[styles.headerRight, width < 600 && styles.headerRightMobile]}>
+        <View style={[styles.headerRight, isMobile && styles.headerRightMobile]}>
           {/* Quick Book Action - Directly navigates to Fleet (Motorbikes) page */}
           <TouchableOpacity
-            style={[styles.headerBookBtn, width < 420 && styles.headerBookBtnSmall]}
+            style={[styles.headerBookBtn, isVerySmall && styles.headerBookBtnSmall]}
             onPress={handleBookPress}
             activeOpacity={0.8}
           >
@@ -72,12 +80,12 @@ export default function CustomHeader({
 
           {/* Language Switcher Toggle next to Login */}
           <TouchableOpacity
-            style={styles.langToggleBtn}
+            style={[styles.langToggleBtn, isVerySmall && styles.langToggleBtnSmall]}
             onPress={toggleLanguage}
             activeOpacity={0.8}
             accessibilityLabel="Switch Language"
           >
-            <Globe size={14} color="#38BDF8" />
+            <Globe size={13} color="#38BDF8" />
             <Text style={styles.langToggleText}>
               {isHindi ? 'English' : 'हिन्दी'}
             </Text>
@@ -85,13 +93,13 @@ export default function CustomHeader({
 
           {/* User Account Button */}
           <TouchableOpacity
-            style={styles.userButton}
+            style={[styles.userButton, isVerySmall && styles.userButtonSmall]}
             onPress={onOpenAuth}
             activeOpacity={0.8}
           >
-            <User size={15} color={COLORS.accentCyan} />
+            <User size={14} color={COLORS.accentCyan} />
             <Text style={styles.userButtonText} numberOfLines={1}>
-              {user ? user.name.split(' ')[0] : t('nav.login', 'Log In')}
+              {getUserDisplayName()}
             </Text>
           </TouchableOpacity>
         </View>
@@ -118,12 +126,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   headerContainerMobile: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    minWidth: 40,
   },
   backButton: {
     width: 36,
@@ -134,10 +143,10 @@ const styles = StyleSheet.create({
     borderColor: COLORS.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   screenTitle: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '700',
     color: COLORS.textPrimary,
     flex: 1,
@@ -169,11 +178,11 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   headerRightMobile: {
-    gap: 7,
+    gap: 6,
   },
   headerBookBtn: {
     backgroundColor: '#0284C7',
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
     paddingVertical: 7,
     borderRadius: RADIUS.full,
     alignItems: 'center',
@@ -187,18 +196,19 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   headerBookBtnSmall: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   headerBookBtnText: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   langToggleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
     borderColor: 'rgba(56, 189, 248, 0.3)',
@@ -206,26 +216,34 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: RADIUS.full,
   },
+  langToggleBtnSmall: {
+    paddingHorizontal: 7,
+    paddingVertical: 5,
+  },
   langToggleText: {
     color: '#38BDF8',
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '700',
   },
   userButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     backgroundColor: COLORS.bgCard,
     borderWidth: 1,
     borderColor: COLORS.borderCard,
-    paddingHorizontal: 13,
-    paddingVertical: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 6.5,
     borderRadius: RADIUS.full,
+  },
+  userButtonSmall: {
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   userButtonText: {
     color: COLORS.textPrimary,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
-    maxWidth: 90,
+    maxWidth: 72,
   },
 });

@@ -36,11 +36,11 @@ export default function FloatingWhatsApp({ onPress, phone = '919876543210' }) {
 const styles = StyleSheet.create({
   floatingButton: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 95 : 85,
-    left: 20,
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    bottom: Platform.OS === 'ios' ? 100 : 88,
+    right: 20,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: COLORS.whatsappGreen,
     alignItems: 'center',
     justifyContent: 'center',
@@ -52,4 +52,3 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
 });
-
