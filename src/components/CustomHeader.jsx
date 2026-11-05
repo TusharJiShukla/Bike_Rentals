@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
 import { Compass, User, ChevronLeft, Globe } from 'lucide-react-native';
 import { COLORS, RADIUS } from '../theme/colors';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -14,6 +14,10 @@ export default function CustomHeader({
   onStartBooking,
 }) {
   const { language, toggleLanguage, t, isHindi } = useLanguage();
+  const { width } = useWindowDimensions();
+
+  // Responsive: remove/hide the brand name in mobile view (< 600px)
+  const showBrandName = width >= 600;
 
   const handleBookPress = () => {
     // Requirement: In navbar, clicking the booking button directly opens the Fleet (Motorbikes) page!
@@ -24,7 +28,7 @@ export default function CustomHeader({
 
   return (
     <View style={styles.headerWrapper}>
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, width < 600 && styles.headerContainerMobile]}>
         <View style={styles.headerLeft}>
           {showBack ? (
             <TouchableOpacity
@@ -43,7 +47,9 @@ export default function CustomHeader({
               <View style={styles.logoIcon}>
                 <Compass size={17} color="#FFFFFF" strokeWidth={2.3} />
               </View>
-              <Text style={styles.brandTitle}>{t('nav.brand', 'THE ROAD EAGLE')}</Text>
+              {showBrandName && (
+                <Text style={styles.brandTitle}>{t('nav.brand', 'THE ROAD EAGLE')}</Text>
+              )}
             </TouchableOpacity>
           )}
 
@@ -54,10 +60,10 @@ export default function CustomHeader({
           )}
         </View>
 
-        <View style={styles.headerRight}>
+        <View style={[styles.headerRight, width < 600 && styles.headerRightMobile]}>
           {/* Quick Book Action - Directly navigates to Fleet (Motorbikes) page */}
           <TouchableOpacity
-            style={styles.headerBookBtn}
+            style={[styles.headerBookBtn, width < 420 && styles.headerBookBtnSmall]}
             onPress={handleBookPress}
             activeOpacity={0.8}
           >
@@ -111,6 +117,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 24,
   },
+  headerContainerMobile: {
+    paddingHorizontal: 14,
+  },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -159,6 +168,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  headerRightMobile: {
+    gap: 7,
+  },
   headerBookBtn: {
     backgroundColor: '#0284C7',
     paddingHorizontal: 16,
@@ -173,6 +185,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 8,
     elevation: 3,
+  },
+  headerBookBtnSmall: {
+    paddingHorizontal: 12,
   },
   headerBookBtnText: {
     color: '#FFFFFF',
